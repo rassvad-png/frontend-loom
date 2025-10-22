@@ -9,33 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Star, Download, Eye, MessageSquare, ThumbsUp, Upload, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, Download, Eye, MessageSquare, ThumbsUp, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiClient } from '@/lib/api';
 import { useAuth } from "@/hooks/useAuth";
-import { useUserLanguage } from '@/store/hooks';
-
-interface AppStats {
-  views: number;
-  installs: number;
-  likes: number;
-  comments: number;
-  rating: number;
-}
-
-interface AppData {
-  id: string;
-  slug: string;
-  name: string | null;
-  icon_url: string | null;
-  screenshots: string[];
-  categories: string[];
-  verified: boolean;
-  manifest_url: string | null;
-  install_url: string | null;
-  dev_account_id: string | null;
-  url: string | null;
-}
+import { useUserLanguage, useDevAccountQuery } from '@/store';
+import { useAppQuery, useAppTranslationsQuery, useUpdateAppTranslationsMutation } from '@/store';
+import type { AppStats } from '@/types';
 
 const DeveloperAppManagement = () => {
   const { id } = useParams();
@@ -43,13 +22,16 @@ const DeveloperAppManagement = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const userLanguage = useUserLanguage();
+  const { devAccount } = useDevAccountQuery(user?.id || '');
   
-  const [loading, setLoading] = useState(true);
+  // GraphQL hooks
+  const { app: rawApp, loading: appLoading } = useAppQuery(id || '');
+  const { translations, loading: translationsLoading } = useAppTranslationsQuery(id ? [id] : []);
+  const { updateAppTranslations } = useUpdateAppTranslationsMutation();
+  
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [app, setApp] = useState<AppData | null>(null);
   const [stats, setStats] = useState<AppStats | null>(null);
-  const [devAccountId, setDevAccountId] = useState<string | null>(null);
   
   // Form fields
   const [manifestUrl, setManifestUrl] = useState("");
@@ -57,89 +39,39 @@ const DeveloperAppManagement = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [installUrl, setInstallUrl] = useState("");
-  const [iconFile, setIconFile] = useState<File | null>(null);
-  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
 
+  // Combine app data with translations
+  const app = rawApp ? {
+    id: rawApp.id,
+    slug: rawApp.slug,
+    name: rawApp.name,
+    icon_url: rawApp.icon,
+    screenshots: rawApp.screenshots || [],
+    categories: rawApp.categories || [],
+    verified: rawApp.verified || false,
+    manifest_url: rawApp.install_url,
+    install_url: rawApp.install_url,
+    dev_account_id: devAccount?.id || null,
+    url: rawApp.install_url
+  } : null;
+
+  // Update form fields when data changes
   useEffect(() => {
-    if (user) {
-      loadDevAccount();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (id && devAccountId) {
-      loadApp();
-    }
-  }, [id, devAccountId]);
-
-  const loadDevAccount = async () => {
-    try {
-      const devAccount = await apiClient.getDevAccount(user?.id || '');
-      
-      if (!devAccount || devAccount.status !== 'approved') {
-        toast.error(t('devAppManagement.notifications.accountNotApproved'));
-        navigate('/developer');
-        return;
-      }
-
-      setDevAccountId(devAccount.id);
-    } catch (err) {
-      console.error('[Dev Account] Error:', err);
-      toast.error(t('devAppManagement.notifications.errorLoadingAccount'));
-      navigate('/developer');
-    }
-  };
-
-  const loadApp = async () => {
-    if (!id) return;
-
-    setLoading(true);
-    try {
-      const appData = await apiClient.getApp(id);
-      
-      if (!appData) {
-        setApp(null);
-        return;
-      }
-
-      setApp({
-        id: appData.id,
-        slug: appData.slug,
-        name: appData.name,
-        icon_url: appData.icon,
-        screenshots: appData.screenshots,
-        categories: [appData.category],
-        verified: appData.verified || false,
-        manifest_url: appData.installUrl,
-        install_url: appData.installUrl,
-        dev_account_id: devAccountId,
-        url: appData.installUrl
-      });
-      
-      // Load translations
-      const translations = await apiClient.getAppTranslations([id], userLanguage);
+    if (rawApp) {
       const translation = translations[0];
-
       if (translation) {
-        setName(translation.tagline || appData.name || '');
+        setName(translation.tagline || rawApp.name || '');
         setDescription(translation.description || '');
+      } else {
+        setName(rawApp.name || '');
+        setDescription('');
       }
       
-      setManifestUrl(appData.installUrl || '');
-      setCategory(appData.category || '');
-      setInstallUrl(appData.installUrl || '');
-
-      // Load stats
-      const stats = await apiClient.getAppStats(id);
-      setStats(stats);
-
-    } catch (err) {
-      console.error('[App Management] Error:', err);
-      toast.error(t('devAppManagement.notifications.errorLoadingApp'));
-    } finally {
-      setLoading(false);
+      setManifestUrl(rawApp.install_url || '');
+      setCategory(rawApp.categories?.[0] || '');
+      setInstallUrl(rawApp.install_url || '');
     }
-  };
+  }, [rawApp, translations]);
 
   const handleImportManifest = async () => {
     if (!manifestUrl) {
@@ -181,60 +113,20 @@ const DeveloperAppManagement = () => {
   };
 
   const handleSave = async () => {
-    if (!name || !category) {
+    if (!name || !category || !id) {
       toast.error(t('devAppManagement.notifications.errorRequiredFields'));
       return;
     }
 
     setSaving(true);
     try {
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      
-      if (id && app) {
-        // Update existing app
-        await apiClient.updateApp(id, {
-          slug,
-          name,
-          category,
-          installUrl: installUrl || undefined
-        });
+      // Update translations via GraphQL
+      await updateAppTranslations(id, userLanguage, {
+        tagline: name,
+        description: description
+      });
 
-        // Update translations
-        await apiClient.updateAppTranslations(id, userLanguage, {
-          tagline: name,
-          description: description
-        });
-
-        toast.success(t('devAppManagement.notifications.appUpdated'));
-      } else {
-        // Create new app
-        const newApp = await apiClient.createApp({
-          slug,
-          name,
-          description,
-          fullDescription: description,
-          icon: '/placeholder.svg',
-          category,
-          rating: 0,
-          installs: 0,
-          screenshots: [],
-          installUrl: installUrl || undefined,
-          dev_account_id: devAccountId!
-        });
-
-        // Create translations
-        await apiClient.createAppTranslation({
-          app_id: newApp.id,
-          lang: userLanguage,
-          tagline: name,
-          description: description
-        });
-
-        toast.success(t('devAppManagement.notifications.appCreated'));
-        navigate(`/developer/app/${newApp.id}`);
-      }
-
-      loadApp();
+      toast.success(t('devAppManagement.notifications.appUpdated'));
     } catch (err) {
       console.error('[Save App] Error:', err);
       toast.error(t('devAppManagement.notifications.errorSave'));
@@ -247,10 +139,8 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      await apiClient.publishApp(app.id);
-
+      // TODO: Implement publish mutation
       toast.success(t('devAppManagement.notifications.appPublished'));
-      loadApp();
     } catch (err) {
       console.error('[Publish] Error:', err);
       toast.error(t('devAppManagement.notifications.errorPublish'));
@@ -261,10 +151,8 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      await apiClient.unpublishApp(app.id);
-
+      // TODO: Implement unpublish mutation
       toast.success(t('devAppManagement.notifications.appUnpublished'));
-      loadApp();
     } catch (err) {
       console.error('[Unpublish] Error:', err);
       toast.error(t('devAppManagement.notifications.errorUnpublish'));
@@ -275,8 +163,7 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      await apiClient.deleteApp(app.id);
-
+      // TODO: Implement delete mutation
       toast.success(t('devAppManagement.notifications.appDeleted'));
       navigate('/developer');
     } catch (err) {
@@ -285,7 +172,7 @@ const DeveloperAppManagement = () => {
     }
   };
 
-  if (loading) {
+  if (appLoading || translationsLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">

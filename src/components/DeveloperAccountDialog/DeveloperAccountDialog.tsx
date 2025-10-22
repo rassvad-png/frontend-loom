@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiClient } from '@/lib/api';
+import { useDevAccountQuery, useCreateDevAccountMutation } from '@/store';
 import { toast } from 'sonner';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import Step1 from './Step1';
@@ -27,6 +27,7 @@ export default function DeveloperAccountDialog({
 }: DeveloperAccountDialogProps) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
+  const { createDevAccount } = useCreateDevAccountMutation();
   const [slug, setSlug] = useState('');
   const [slugChecking, setSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
@@ -102,21 +103,17 @@ export default function DeveloperAccountDialog({
     return orgName.toLowerCase().replace(/\s+/g, '').replace(SLUG_REGEX, '');
   };
 
+  // Use GraphQL query to check existing dev account
+  const { devAccount: existingDevAccount } = useDevAccountQuery(userId);
+
   // Check if slug is available in database
   const checkSlugAvailability = async (slugToCheck: string) => {
     if (!slugToCheck) return;
 
     setSlugChecking(true);
     try {
-      const { data, error } = await supabase
-        .from('dev_accounts')
-        .select('id')
-        .eq('slug', slugToCheck)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      setSlugAvailable(!data); // true if no data found (available)
+      // If no existing dev account, slug is available
+      setSlugAvailable(!existingDevAccount);
     } catch (error: any) {
       console.error('Error checking slug:', error);
       setSlugAvailable(false);
@@ -266,22 +263,17 @@ export default function DeveloperAccountDialog({
     setSubmitting(true);
     try {
       // Check if user already has a dev account
-      const { data: existing } = await supabase
-        .from('dev_accounts')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existing) {
+      if (existingDevAccount) {
         toast.error(t('developer.validation.alreadyExists'));
         setSubmitting(false);
         return;
       }
 
       // Create new dev account
-      await apiClient.createDevAccount({
+      await createDevAccount({
         user_id: userId,
         org_name: formData.org_name,
+        slug: slug,
         website: formData.website || '',
         contact_email: formData.contact_email || '',
         github_url: formData.github_url || '',

@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { apiClient } from '@/lib/api';
 import { DeveloperAccountDialog } from '@/components/DeveloperAccountDialog';
+import { useDevAccountQuery } from '@/store';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,28 +35,13 @@ export const Layout = ({ children, onSearch }: LayoutProps) => {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [devAccount, setDevAccount] = useState<any>(null);
+  const { devAccount } = useDevAccountQuery(user?.id || '');
   const [devDialogOpen, setDevDialogOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(searchQuery);
   };
-
-  useEffect(() => {
-    const loadDevAccount = async () => {
-      if (!user) return;
-
-      try {
-        const devAccount = await apiClient.getDevAccount(user.id);
-        setDevAccount(devAccount);
-      } catch (error) {
-        console.error('Error loading dev account:', error);
-      }
-    };
-
-    loadDevAccount();
-  }, [user]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();

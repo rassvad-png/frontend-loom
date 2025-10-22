@@ -1,66 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { LargeAppCard } from "@/components/LargeAppCard";
 import { AppListItem } from "@/components/AppListItem";
 import { BottomNav } from "@/components/BottomNav";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mockApps } from "@/data/mockApps";
-import { apiClient } from "@/lib/api";
-import { useUserLanguage } from "@/store/hooks";
-import { useAppTranslations } from '@/hooks/useAppTranslations';
+import { useAppsQuery, useAppTranslationsQuery } from '@/store';
+
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("today");
-  const [apps, setApps] = useState(mockApps);
-  const [loading, setLoading] = useState(true);
-  const [appIds, setAppIds] = useState<string[]>([]);
-  const userLanguage = useUserLanguage();
-
-  const loadApps = async () => {
-    try {
-      const apps = await apiClient.getApps(5);
-
-      if (apps && apps.length > 0) {
-        const appsWithReviews = apps.map(app => ({
-          ...app,
-          reviews: [] // Add missing reviews field
-        }));
-        setApps(appsWithReviews);
-        setAppIds(apps.map(app => app.id));
-      }
-    } catch (err: any) {
-      console.error('[Supabase] Connection error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const { translations } = useAppTranslations(appIds);
-
-  // Apply translations to apps when translations change
-  useEffect(() => {
-    if (translations.length > 0) {
-      setApps(prevApps => 
-        prevApps.map(app => {
-          const appTranslation = translations.find(t => t.app_id === app.id);
-          return {
-            ...app,
-            name: appTranslation?.tagline || app.name || app.slug,
-            description: appTranslation?.description || app.slug,
-            fullDescription: appTranslation?.description || app.slug,
-          };
-        })
-      );
-    }
-  }, [translations]);
-
-  useEffect(() => {
-    loadApps();
-  }, []);
-
-  const appsWithScreenshots = apps.filter(app => app.screenshots && app.screenshots.length >= 2);
-  const featuredApp = appsWithScreenshots[0] || apps[0];
-  const trendingApps = apps.slice(1, 4);
 
   // Featured Card Skeleton
   const FeaturedCardSkeleton = () => (
@@ -77,6 +25,15 @@ const Index = () => {
     </div>
   );
 
+  // App Card Skeleton
+  const AppCardSkeleton = () => (
+    <div className="bg-card rounded-xl p-4 shadow-sm">
+      <Skeleton className="w-full h-32 rounded-lg mb-4" />
+      <Skeleton className="h-6 w-3/4 mb-2" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  );
+
   // App List Item Skeleton
   const AppListItemSkeleton = () => (
     <div className="flex items-center gap-3 p-4 bg-card rounded-xl">
@@ -88,6 +45,54 @@ const Index = () => {
       <Skeleton className="h-8 w-20" />
     </div>
   );
+
+  // Get apps from Apollo
+  const { apps: rawApps, loading: appsLoading } = useAppsQuery(5);
+
+  // Get app IDs for translations
+  const appIds = rawApps.map(app => app.id);
+  const { translations } = useAppTranslationsQuery(appIds);
+
+  // Combine apps with translations
+  const apps = rawApps.map(app => {
+    const appTranslation = translations.find(t => t.app_id === app.id);
+    return {
+      ...app,
+      icon: app.icon_url, // Map icon_url to icon
+      name: appTranslation?.tagline || app.name || app.slug,
+      description: appTranslation?.description || app.slug,
+      fullDescription: appTranslation?.description || app.slug,
+      reviews: [], // Add missing reviews field
+      screenshots: app.screenshots || [], // Ensure screenshots is always an array
+      category: app.categories?.[0] || 'general', // Take first category or default
+    };
+  });
+
+  const loading = appsLoading;
+
+  const appsWithScreenshots = apps.filter(app => app.screenshots && app.screenshots.length >= 2);
+  const featuredApp = appsWithScreenshots[0] || apps[0];
+  const trendingApps = apps.slice(1, 4);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Layout onSearch={() => {}}>
+        <main className="container mx-auto px-4 py-8">
+          <FeaturedCardSkeleton />
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-6">Trending Apps</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <AppCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </main>
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -101,7 +106,7 @@ const Index = () => {
         </div>
 
         {/* Featured App */}
-        {loading ? <FeaturedCardSkeleton /> : <LargeAppCard app={featuredApp} />}
+        {loading ? <FeaturedCardSkeleton /> : featuredApp ? <LargeAppCard app={featuredApp} /> : <FeaturedCardSkeleton />}
 
         {/* Trending Section */}
         <section>

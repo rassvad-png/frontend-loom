@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star, Download, ArrowLeft, ExternalLink, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiClient } from "@/lib/api";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { useUserLanguage } from "@/store/hooks";
-import { useAppTranslations } from '@/hooks/useAppTranslations';
+import { useAppQuery, useAppTranslationsQuery } from '@/store';
 
 interface AppData {
   id: string;
@@ -31,68 +29,52 @@ interface AppData {
 const AppDetails = () => {
   const { slug } = useParams();
   const { t } = useTranslation();
-  const userLanguage = useUserLanguage();
   const { logEvent } = useAnalytics();
-  const [app, setApp] = useState<AppData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [appId, setAppId] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadAppDetails();
-  }, [slug]);
-
-  const loadAppDetails = async () => {
-    if (!slug) return;
-
-    setLoading(true);
-    try {
-      const app = await apiClient.getApp(slug);
-      
-      if (!app) {
-        setApp(null);
-        setAppId(null);
-        return;
-      }
-
-      // Set basic app data first
-      setApp({
-        ...app,
-        name: app.name || app.slug,
-        tagline: app.slug,
-        description: app.slug,
-        fullDescription: app.slug,
-        whatsNew: t('appDetails.defaultWhatsNew'),
-      });
-      setAppId(app.id);
-
-      // Log view event
-      await logEvent(app.id, 'view', { source: 'app_details' });
-    } catch (err) {
-      console.error('[App Details] Error:', err);
-      setApp(null);
-      setAppId(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
+  // Get app data from Apollo
+  const { app: rawApp, loading: appLoading, error: appError } = useAppQuery(slug || '');
+  
   // Get translations for the current app
-  const { translations } = useAppTranslations(appId ? [appId] : []);
+  const { translations, loading: translationsLoading } = useAppTranslationsQuery(
+    rawApp?.id ? [rawApp.id] : []
+  );
+
+  // Combine app data with translations
+  const app = rawApp ? {
+    ...rawApp,
+    icon: rawApp.icon_url,
+    name: rawApp.name || rawApp.slug,
+    description: rawApp.slug,
+    fullDescription: rawApp.slug,
+    screenshots: rawApp.screenshots || [],
+    category: rawApp.categories?.[0] || 'general',
+    tagline: rawApp.slug,
+    whatsNew: t('appDetails.defaultWhatsNew'),
+  } : null;
 
   // Apply translations when they change
   useEffect(() => {
     if (app && translations.length > 0) {
       const translation = translations[0];
-      setApp(prevApp => prevApp ? {
-        ...prevApp,
-        name: translation?.tagline || prevApp.name || prevApp.slug,
-        tagline: translation?.tagline || prevApp.slug,
-        description: translation?.description || prevApp.slug,
-        fullDescription: translation?.description || prevApp.slug,
+      // Update app with translations
+      Object.assign(app, {
+        name: translation?.tagline || app.name || app.slug,
+        tagline: translation?.tagline || app.slug,
+        description: translation?.description || app.slug,
+        fullDescription: translation?.description || app.slug,
         whatsNew: translation?.whats_new || t('appDetails.defaultWhatsNew'),
-      } : null);
+      });
     }
-  }, [translations, app, t]);
+  }, [translations, t]);
+
+  const loading = appLoading || translationsLoading;
+
+  // Log view event when app loads
+  useEffect(() => {
+    if (app?.id) {
+      logEvent(app.id, 'view', { source: 'app_details' });
+    }
+  }, [app?.id]); // Remove logEvent from dependencies
 
   const handleInstall = async () => {
     if (!app) return;
@@ -133,7 +115,7 @@ const AppDetails = () => {
     );
   }
 
-  if (!app) {
+  if (appError || !app) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-12 text-center">

@@ -1,32 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiClient } from '@/lib/api';
-import { AppTranslation } from '@/lib/api/types';
+import { useAppTranslationsQuery } from '@/store';
+import type { AppTranslation } from '@/types';
 
 export const useAppTranslations = (appIds: string[]) => {
   const { i18n } = useTranslation();
   const [translations, setTranslations] = useState<AppTranslation[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const { translations: data, loading: queryLoading } = useAppTranslationsQuery(appIds);
+
   const loadTranslations = useCallback(async (language?: string) => {
     if (appIds.length === 0) return;
     
     setLoading(true);
     try {
-      const currentLanguage = language || i18n.language;
-      const translations = await apiClient.getAppTranslations(appIds, currentLanguage);
-      setTranslations(translations);
+      // Translations are now loaded via GraphQL query
+      setTranslations(data || []);
     } catch (error) {
       console.error('Error loading translations:', error);
     } finally {
       setLoading(false);
     }
-  }, [appIds, i18n.language]);
+  }, [appIds, data]);
 
-  // Load translations on mount and when appIds change
+  // Update translations when GraphQL data changes
   useEffect(() => {
-    loadTranslations();
-  }, [appIds.join(',')]); // Use join to avoid array reference issues
+    if (data) {
+      setTranslations(data);
+    }
+  }, [data]);
 
   // Listen for language changes
   useEffect(() => {
@@ -40,5 +43,9 @@ export const useAppTranslations = (appIds: string[]) => {
     };
   }, [i18n, loadTranslations]);
 
-  return { translations, loading, reloadTranslations: loadTranslations };
+  return { 
+    translations, 
+    loading: loading || queryLoading, 
+    reloadTranslations: loadTranslations 
+  };
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/Layout";
@@ -6,78 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, Star, Download, TrendingUp, AlertCircle, Clock } from "lucide-react";
-import { toast } from "sonner";
-import { apiClient } from '@/lib/api';
 import { useAuth } from "@/hooks/useAuth";
-
-interface DeveloperApp {
-  id: string;
-  slug: string;
-  name: string | null;
-  icon_url: string | null;
-  rating: number;
-  installs: number;
-  categories: string[];
-  verified: boolean;
-}
-
-interface DevAccount {
-  id: string;
-  status: string;
-  org_name: string | null;
-}
+import { useDevAccountQuery } from '@/store';
+import { useDeveloperAppsQuery } from '@/store';
 
 const DeveloperDashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslation();
-  const [developerApps, setDeveloperApps] = useState<DeveloperApp[]>([]);
-  const [devAccount, setDevAccount] = useState<DevAccount | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { devAccount, loading: devAccountLoading } = useDevAccountQuery(user?.id || '');
+  
+  const { apps: developerApps, loading } = useDeveloperAppsQuery(devAccount?.id || '');
 
   useEffect(() => {
-    if (!authLoading && user) {
-      loadDevAccount();
-    } else if (!authLoading && !user) {
+    if (!authLoading && !user) {
       navigate('/auth');
     }
-  }, [user, authLoading]);
-
-  const loadDevAccount = async () => {
-    try {
-      const devAccount = await apiClient.getDevAccount(user?.id || '');
-
-      if (!devAccount) {
-        console.error('[Dev Account] No account found');
-        toast.error(t('devDashboard.notifications.errorLoadingAccount'));
-        return;
-      }
-
-      setDevAccount(devAccount);
-      
-      if (devAccount) {
-        loadDeveloperApps(devAccount.id);
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error('[Dev Account] Error:', err);
-      toast.error(t('devDashboard.notifications.errorConnection'));
-      setLoading(false);
-    }
-  };
-
-  const loadDeveloperApps = async (devAccountId: string) => {
-    try {
-      const apps = await apiClient.getDeveloperApps(devAccountId);
-      setDeveloperApps(apps);
-    } catch (err) {
-      console.error('[Developer Dashboard] Error:', err);
-      toast.error(t('devDashboard.notifications.errorConnection'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, authLoading, navigate]);
 
   const handleCreateApp = () => {
     if (!devAccount || devAccount.status !== 'approved') {
@@ -86,8 +31,8 @@ const DeveloperDashboard = () => {
     navigate('/developer/app/new');
   };
 
-  const totalInstalls = developerApps.reduce((sum, app) => sum + app.installs, 0);
-  const avgRating = developerApps.length > 0 
+  const totalInstalls = developerApps?.reduce((sum, app) => sum + app.installs, 0) || 0;
+  const avgRating = developerApps && developerApps.length > 0 
     ? (developerApps.reduce((sum, app) => sum + app.rating, 0) / developerApps.length).toFixed(1)
     : '0.0';
 
@@ -166,7 +111,7 @@ const DeveloperDashboard = () => {
               <Plus className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{developerApps.length}</div>
+              <div className="text-2xl font-bold">{developerApps?.length || 0}</div>
               <p className="text-xs text-muted-foreground mt-1">{t('devDashboard.stats.published')}</p>
             </CardContent>
           </Card>
@@ -180,13 +125,13 @@ const DeveloperDashboard = () => {
           <CardContent>
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">{t('devDashboard.appsList.loading')}</div>
-            ) : developerApps.length === 0 ? (
+            ) : !developerApps || developerApps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 {t('devDashboard.appsList.empty')}
               </div>
             ) : (
               <div className="space-y-4">
-                {developerApps.map((app) => (
+                {developerApps?.map((app) => (
                   <div
                     key={app.id}
                     className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors"

@@ -3,7 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/hooks/useAuth';
-import { apiClient } from '@/lib/api';
+import { authClient } from '@/lib/auth';
+import { useProfileQuery } from '@/store';
+import { useUpdateProfileMutation, useCategoriesQuery } from '@/store';
+import { useApolloClient } from '@apollo/client/react';
+import { GET_PROFILE } from '@/store/queries/queries';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,33 +50,17 @@ import {
 } from '@/components/ui/select';
 import AvatarCropDialog from '@/components/AvatarCropDialog';
 import { DeveloperAccountDialog } from '@/components/DeveloperAccountDialog';
-
-interface Profile {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  birth_date: string | null;
-  display_name: string | null;
-  avatar: string | null;
-  favorite_categories: string[];
-  country: string | null;
-  language: string | null;
-  theme: string | null;
-}
-
-interface Category {
-  id: string;
-  slug: string;
-}
+import type { Profile, ProfileCacheData } from '@/types';
 
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profile, loading: profileLoading } = useProfileQuery(user?.id || '');
+  const { updateProfile, loading: updateLoading } = useUpdateProfileMutation();
+  const apolloClient = useApolloClient();
+  const { categories, loading: categoriesLoading } = useCategoriesQuery();
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -112,11 +100,38 @@ export default function Profile() {
 
   useEffect(() => {
     if (user) {
-      loadProfile();
-      loadCategories();
       setEmail(user.email || '');
     }
   }, [user]);
+
+  // Update form fields when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+      setBirthDate(profile.birth_date || '');
+      setDisplayName(profile.display_name || '');
+      setCountry(profile.country || '');
+
+      // Sync language from DB to localStorage and i18n
+      const dbLanguage = profile.language || 'en';
+      const localLanguage = localStorage.getItem('language');
+
+      if (dbLanguage !== localLanguage) {
+        localStorage.setItem('language', dbLanguage);
+        i18n.changeLanguage(dbLanguage);
+      }
+
+      // Apply theme from localStorage
+      const localTheme = localStorage.getItem('theme') || 'light';
+      setCurrentTheme(localTheme);
+      if (localTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [profile, i18n]);
 
   // Get current theme from localStorage
   const getCurrentTheme = () => localStorage.getItem('theme') || 'light';
@@ -131,56 +146,6 @@ export default function Profile() {
       document.documentElement.classList.remove('dark');
     }
   }, []);
-
-  const loadCategories = async () => {
-    try {
-      const categories = await apiClient.getCategories();
-
-      setCategories(categories);
-    } catch (error: any) {
-      console.error('Error loading categories:', error);
-    }
-  };
-
-  const loadProfile = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const profile = await apiClient.getProfile(user.id);
-
-      if (profile) {
-        setProfile(profile);
-        setFirstName(profile.first_name || '');
-        setLastName(profile.last_name || '');
-        setBirthDate(profile.birth_date || '');
-        setDisplayName(profile.display_name || '');
-        setCountry(profile.country || '');
-
-        // Sync language from DB to localStorage and i18n
-        const dbLanguage = profile.language || 'en';
-        const localLanguage = localStorage.getItem('language');
-
-        if (dbLanguage !== localLanguage) {
-          localStorage.setItem('language', dbLanguage);
-          i18n.changeLanguage(dbLanguage);
-        }
-
-        // Apply theme from localStorage
-        const localTheme = getCurrentTheme();
-        setCurrentTheme(localTheme);
-        if (localTheme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error loading profile:', error);
-      toast.error(t('profile.notifications.errorLoading'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -217,7 +182,7 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      await apiClient.updateProfile(user.id, {
+      await updateProfile(user.id, {
         first_name: firstName,
         last_name: lastName,
         birth_date: birthDate || null,
@@ -226,7 +191,6 @@ export default function Profile() {
       });
 
       toast.success(t('profile.notifications.profileUpdated'));
-      loadProfile();
     } catch (error: any) {
       toast.error(t('profile.notifications.errorUpdate'), {
         description: error.message,
@@ -240,10 +204,34 @@ export default function Profile() {
     if (!user?.id) return;
 
     try {
-      await apiClient.updateProfile(user.id, { [field]: value });
-
+      const updatedProfile = await updateProfile(user.id, { [field]: value });
+      
+      // Обновляем кэш Apollo вручную
+      if (updatedProfile) {
+        apolloClient.cache.updateQuery(
+          { query: GET_PROFILE, variables: { userId: user.id } },
+          (existingData: ProfileCacheData | null) => {
+            if (existingData?.profilesCollection?.edges?.[0]?.node) {
+              return {
+                ...existingData,
+                profilesCollection: {
+                  ...existingData.profilesCollection,
+                  edges: [{
+                    ...existingData.profilesCollection.edges[0],
+                    node: {
+                      ...existingData.profilesCollection.edges[0].node,
+                      [field]: value
+                    }
+                  }]
+                }
+              };
+            }
+            return existingData;
+          }
+        );
+      }
+      
       toast.success(t('profile.notifications.settingsUpdated'));
-      loadProfile();
     } catch (error: any) {
       toast.error(t('profile.notifications.errorSettings'), {
         description: error.message,
@@ -280,6 +268,7 @@ export default function Profile() {
     }
   };
 
+
   const handleUpdateEmail = async () => {
     if (!user?.id || !email || email === user.email) return;
 
@@ -290,7 +279,7 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      await apiClient.updateUserEmail(email);
+      await authClient.updateUserEmail(email);
 
       toast.success(t('profile.notifications.emailUpdated'), {
         description: t('profile.notifications.emailConfirm'),
@@ -312,7 +301,7 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      await apiClient.updateUserPassword(newPassword);
+      await authClient.updateUserPassword(newPassword);
 
       toast.success(t('profile.notifications.passwordUpdated'));
       setNewPassword('');
@@ -345,16 +334,13 @@ export default function Profile() {
     setCropDialogOpen(false);
 
     try {
-      const filePath = `avatars/${user.id}.webp`;
-
       // Upload to storage
-      const avatarUrl = await apiClient.uploadAvatar(croppedImage, user.id);
+      const avatarUrl = await authClient.uploadAvatar(croppedImage, user.id);
 
       // Update profile
-      await apiClient.updateProfile(user.id, { avatar: avatarUrl });
+      await updateProfile(user.id, { avatar: avatarUrl });
 
       toast.success(t('profile.notifications.avatarUpdated'));
-      loadProfile();
     } catch (error: any) {
       toast.error(t('profile.notifications.errorAvatar'), {
         description: error.message,
@@ -383,7 +369,7 @@ export default function Profile() {
     return `hsl(${hue}, 70%, 60%)`;
   };
 
-  if (authLoading || loading) {
+  if (authLoading || profileLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -728,7 +714,7 @@ export default function Profile() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {categoriesLoading ? (
                   <div className="space-y-2">
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />

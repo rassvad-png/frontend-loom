@@ -1,6 +1,9 @@
-import { apiClient } from "@/lib/api";
+import { useIncrementViewsMutation, useIncrementInstallsMutation } from '@/store/mutations';
 
 export const useAnalytics = () => {
+  const { incrementViews } = useIncrementViewsMutation();
+  const { incrementInstalls } = useIncrementInstallsMutation();
+
   const logEvent = async (
     appId: string,
     event: 'view' | 'install' | 'click',
@@ -9,9 +12,9 @@ export const useAnalytics = () => {
     try {
       // Update counters on apps table
       if (event === 'view') {
-        await apiClient.incrementViews(appId);
+        await incrementViews(appId);
       } else if (event === 'install') {
-        await apiClient.incrementInstalls(appId);
+        await incrementInstalls(appId);
       }
 
       return true;
