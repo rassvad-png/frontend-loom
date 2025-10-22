@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FeaturedCard } from "@/components/FeaturedCard";
+import { LargeAppCard } from "@/components/LargeAppCard";
 import { AppListItem } from "@/components/AppListItem";
 import { BottomNav } from "@/components/BottomNav";
 import { mockApps } from "@/data/mockApps";
@@ -21,7 +21,8 @@ const Apps = () => {
   const [selectedCategory, setSelectedCategory] = useState("business");
 
   const appsList = mockApps.filter(app => app.category !== "Игры");
-  const featuredApp = appsList[0];
+  const appsWithScreenshots = appsList.filter(app => app.screenshots && app.screenshots.length >= 2);
+  const featuredApp = appsWithScreenshots[0] || appsList[0];
 
   return (<Layout>
     <div className="min-h-screen bg-background pb-20">
@@ -52,7 +53,7 @@ const Apps = () => {
         {featuredApp && (
           <section>
             <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Сейчас доступно</p>
-            <FeaturedCard app={featuredApp} />
+            <LargeAppCard app={featuredApp} />
           </section>
         )}
 

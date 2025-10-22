@@ -8,6 +8,7 @@ import Games from "./pages/Games";
 import Apps from "./pages/Apps";
 import AppDetails from "./pages/AppDetails";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
+import DeveloperAppManagement from "./pages/DeveloperAppManagement";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/app/:slug" element={<AppDetails />} />
           <Route path="/developer" element={<DeveloperDashboard />} />
           <Route path="/developer-account" element={<DeveloperDashboard />} />
+          <Route path="/developer/app/:id" element={<DeveloperAppManagement />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

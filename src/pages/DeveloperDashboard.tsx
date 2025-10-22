@@ -1,40 +1,80 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Star, Download, TrendingUp, Upload } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Star, Download, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DeveloperApp {
   id: string;
   slug: string;
+  name: string | null;
   icon_url: string | null;
   rating: number;
   installs: number;
   categories: string[];
+  verified: boolean;
+}
+
+interface DevAccount {
+  id: string;
+  status: string;
+  org_name: string | null;
 }
 
 const DeveloperDashboard = () => {
-  const [isAddAppOpen, setIsAddAppOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [developerApps, setDeveloperApps] = useState<DeveloperApp[]>([]);
+  const [devAccount, setDevAccount] = useState<DevAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDeveloperApps();
-  }, []);
+    if (!authLoading && user) {
+      loadDevAccount();
+    } else if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading]);
 
-  const loadDeveloperApps = async () => {
+  const loadDevAccount = async () => {
     try {
-      // TODO: Filter by actual developer_id when auth is implemented
+      const { data, error } = await supabase
+        .from('dev_accounts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('[Dev Account] Error:', error);
+        toast.error('Ошибка загрузки аккаунта разработчика');
+        return;
+      }
+
+      setDevAccount(data);
+      
+      if (data) {
+        loadDeveloperApps(data.id);
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('[Dev Account] Error:', err);
+      toast.error('Ошибка подключения');
+      setLoading(false);
+    }
+  };
+
+  const loadDeveloperApps = async (devAccountId: string) => {
+    try {
       const { data, error } = await supabase
         .from('apps')
-        .select('id, slug, icon_url, rating, installs, categories')
+        .select('id, slug, name, icon_url, rating, installs, categories, verified')
+        .eq('dev_account_id', devAccountId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -52,34 +92,11 @@ const DeveloperDashboard = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    try {
-      const { error } = await supabase
-        .from('apps')
-        .insert({
-          slug: formData.get('name')?.toString().toLowerCase().replace(/\s+/g, '-') || '',
-          icon_url: null, // TODO: Upload icon
-          categories: [formData.get('category')?.toString() || 'Утилиты'],
-          install_url: formData.get('url')?.toString() || '',
-          verified: false
-        });
-
-      if (error) {
-        console.error('[Developer Dashboard] Error adding app:', error);
-        toast.error('Не удалось добавить приложение');
-        return;
-      }
-
-      toast.success("Приложение успешно добавлено!");
-      setIsAddAppOpen(false);
-      loadDeveloperApps();
-    } catch (err) {
-      console.error('[Developer Dashboard] Error:', err);
-      toast.error('Ошибка при добавлении');
+  const handleCreateApp = () => {
+    if (!devAccount || devAccount.status !== 'approved') {
+      return;
     }
+    navigate('/developer/app/new');
   };
 
   const totalInstalls = developerApps.reduce((sum, app) => sum + app.installs, 0);
@@ -96,96 +113,37 @@ const DeveloperDashboard = () => {
             <h1 className="text-3xl font-bold mb-2">Кабинет разработчика</h1>
             <p className="text-muted-foreground">Управляйте своими приложениями</p>
           </div>
-          <Dialog open={isAddAppOpen} onOpenChange={setIsAddAppOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-primary to-purple-600">
-                <Plus className="w-4 h-4 mr-2" />
-                Добавить приложение
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Добавить новое приложение</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Название приложения</Label>
-                  <Input id="name" name="name" placeholder="Мое приложение" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Краткое описание</Label>
-                  <Input id="description" name="description" placeholder="Краткое описание приложения" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fullDescription">Подробное описание</Label>
-                  <Textarea
-                    id="fullDescription"
-                    name="fullDescription"
-                    placeholder="Подробное описание вашего приложения..."
-                    rows={4}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Категория</Label>
-                  <Select name="category" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите категорию" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ai">AI</SelectItem>
-                      <SelectItem value="crypto">Crypto</SelectItem>
-                      <SelectItem value="games">Игры</SelectItem>
-                      <SelectItem value="business">Бизнес</SelectItem>
-                      <SelectItem value="utilities">Утилиты</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="url">URL приложения</Label>
-                  <Input id="url" name="url" type="url" placeholder="https://myapp.com" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="icon">Иконка приложения</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Нажмите для загрузки или перетащите файл
-                    </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG (рекомендуется 512x512px)</p>
-                    <Input id="icon" type="file" accept="image/*" className="hidden" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="screenshots">Скриншоты</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Загрузите скриншоты (можно несколько)
-                    </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG (рекомендуется 1920x1080px)</p>
-                    <Input id="screenshots" type="file" accept="image/*" multiple className="hidden" />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1 bg-gradient-to-r from-primary to-purple-600">
-                    Добавить приложение
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsAddAppOpen(false)}>
-                    Отмена
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            className="bg-gradient-to-r from-primary to-purple-600"
+            onClick={handleCreateApp}
+            disabled={!devAccount || devAccount.status !== 'approved'}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Добавить приложение
+          </Button>
         </div>
+
+        {/* Pending Account Banner */}
+        {devAccount && devAccount.status === 'pending' && (
+          <Alert className="mb-8 bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            <AlertDescription className="ml-2">
+              <div className="space-y-2">
+                <p className="font-semibold text-yellow-900 dark:text-yellow-100">
+                  Ваш аккаунт разработчика находится на проверке
+                </p>
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  Публикация приложений временно недоступна. Обычно проверка занимает 1–3 рабочих дня. 
+                  Пока что вы можете подготовить и сохранить приложения в черновиках.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300 mt-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Ожидайте подтверждения от администрации</span>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -261,8 +219,20 @@ const DeveloperDashboard = () => {
                       )}
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg mb-1">{app.slug}</h3>
+                  <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-lg">{app.name || app.slug}</h3>
+                        {app.verified && (
+                          <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+                            Опубликовано
+                          </span>
+                        )}
+                        {!app.verified && (
+                          <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full">
+                            Черновик
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
                         {app.categories?.[0] || 'Приложение'}
                       </span>
@@ -284,7 +254,11 @@ const DeveloperDashboard = () => {
                       </div>
                     </div>
 
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/developer/app/${app.id}`)}
+                    >
                       Редактировать
                     </Button>
                   </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
-import { FeaturedCard } from "@/components/FeaturedCard";
+import { LargeAppCard } from "@/components/LargeAppCard";
 import { AppListItem } from "@/components/AppListItem";
 import { BottomNav } from "@/components/BottomNav";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -70,7 +70,8 @@ const Index = () => {
     loadApps();
   }, []);
 
-  const featuredApp = apps[0];
+  const appsWithScreenshots = apps.filter(app => app.screenshots && app.screenshots.length >= 2);
+  const featuredApp = appsWithScreenshots[0] || apps[0];
   const trendingApps = apps.slice(1, 4);
 
   // Featured Card Skeleton
@@ -112,7 +113,7 @@ const Index = () => {
         </div>
 
         {/* Featured App */}
-        {loading ? <FeaturedCardSkeleton /> : <FeaturedCard app={featuredApp} />}
+        {loading ? <FeaturedCardSkeleton /> : <LargeAppCard app={featuredApp} />}
 
         {/* Trending Section */}
         <section>

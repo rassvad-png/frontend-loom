@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { FeaturedCard } from "@/components/FeaturedCard";
+import { LargeAppCard } from "@/components/LargeAppCard";
 import { AppListItem } from "@/components/AppListItem";
 import { BottomNav } from "@/components/BottomNav";
 import { mockApps } from "@/data/mockApps";
@@ -33,7 +33,8 @@ const Games = () => {
 
   const gameApps = mockApps.filter(app => app.category === "Игры");
   const filteredGames = gameApps.filter((app: any) => genreMap[app.id] === selectedCategory);
-  const featuredGame = filteredGames[0];
+  const gamesWithScreenshots = filteredGames.filter(game => game.screenshots && game.screenshots.length >= 2);
+  const featuredGame = gamesWithScreenshots[0] || filteredGames[0];
 
   return (
     <Layout>
@@ -65,7 +66,7 @@ const Games = () => {
         {featuredGame && (
           <section>
             <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Сейчас доступно</p>
-            <FeaturedCard app={featuredGame} />
+            <LargeAppCard app={featuredGame} />
           </section>
         )}
 
