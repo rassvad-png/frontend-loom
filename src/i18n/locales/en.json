@@ -117,5 +117,113 @@
       "cancel": "Cancel",
       "apply": "Apply"
     }
+  },
+  "devDashboard": {
+    "title": "Developer Dashboard",
+    "subtitle": "Manage your applications",
+    "addApp": "Add Application",
+    "pendingBanner": {
+      "title": "Your developer account is pending approval",
+      "description": "Publishing applications is temporarily unavailable. Approval usually takes 1–3 business days. In the meantime, you can prepare and save applications as drafts.",
+      "waiting": "Awaiting administration confirmation"
+    },
+    "stats": {
+      "totalInstalls": "Total Installs",
+      "monthGrowth": "+12.5% this month",
+      "avgRating": "Average Rating",
+      "outOf": "Out of 5.0 possible",
+      "apps": "Applications",
+      "published": "Published"
+    },
+    "appsList": {
+      "title": "Your Applications",
+      "loading": "Loading...",
+      "empty": "No applications yet. Add your first one!",
+      "statusPublished": "Published",
+      "statusDraft": "Draft",
+      "categoryFallback": "Application",
+      "rating": "Rating",
+      "installs": "Installs",
+      "edit": "Edit"
+    },
+    "notifications": {
+      "errorLoadingAccount": "Error loading developer account",
+      "errorConnection": "Connection error",
+      "errorLoadingApps": "Failed to load applications"
+    }
+  },
+  "devAppManagement": {
+    "backToDashboard": "Back to developer dashboard",
+    "titleEdit": "Manage Application",
+    "titleCreate": "Create Application",
+    "status": "Status:",
+    "statusPublished": "Published",
+    "statusDraft": "Draft",
+    "unpublish": "Unpublish",
+    "publish": "Publish",
+    "stats": {
+      "views": "Views",
+      "installs": "Installs",
+      "likes": "Likes",
+      "comments": "Comments",
+      "rating": "Rating"
+    },
+    "form": {
+      "title": "Application Information",
+      "manifestUrl": "Manifest URL (optional)",
+      "manifestUrlPlaceholder": "https://myapp.com/manifest.json",
+      "import": "Import",
+      "importHint": "Import data from manifest.json to autofill fields",
+      "name": "Application Name *",
+      "namePlaceholder": "My Application",
+      "description": "Description",
+      "descriptionPlaceholder": "Detailed description of your application...",
+      "category": "Category *",
+      "categoryPlaceholder": "Select category",
+      "installUrl": "Application URL",
+      "installUrlPlaceholder": "https://myapp.com",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete Application"
+    },
+    "categories": {
+      "ai": "AI",
+      "crypto": "Crypto",
+      "games": "Games",
+      "business": "Business",
+      "utilities": "Utilities",
+      "productivity": "Productivity",
+      "lifestyle": "Lifestyle",
+      "music": "Music"
+    },
+    "deleteDialog": {
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. The application and all related data will be permanently deleted.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "notifications": {
+      "accountNotApproved": "Your developer account is not yet approved",
+      "errorLoadingAccount": "Error loading developer account",
+      "errorLoadingApp": "Error loading application",
+      "errorManifestUrl": "Enter manifest URL",
+      "errorManifestFetch": "Failed to load manifest",
+      "manifestImported": "Manifest successfully imported",
+      "errorImport": "Failed to import manifest",
+      "errorRequiredFields": "Fill in required fields",
+      "appUpdated": "Application successfully updated",
+      "appCreated": "Application successfully created",
+      "errorSave": "Error saving application",
+      "appPublished": "Application published",
+      "errorPublish": "Publishing error",
+      "appUnpublished": "Application unpublished",
+      "errorUnpublish": "Unpublishing error",
+      "appDeleted": "Application deleted",
+      "errorDelete": "Deletion error"
+    }
+  },
+  "largeAppCard": {
+    "install": "Install",
+    "screenshotsRemaining": "+{{count}}"
   }
 }

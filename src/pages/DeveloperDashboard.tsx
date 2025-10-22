@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ interface DevAccount {
 const DeveloperDashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [developerApps, setDeveloperApps] = useState<DeveloperApp[]>([]);
   const [devAccount, setDevAccount] = useState<DevAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ const DeveloperDashboard = () => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('[Dev Account] Error:', error);
-        toast.error('Ошибка загрузки аккаунта разработчика');
+        toast.error(t('devDashboard.notifications.errorLoadingAccount'));
         return;
       }
 
@@ -64,7 +66,7 @@ const DeveloperDashboard = () => {
       }
     } catch (err) {
       console.error('[Dev Account] Error:', err);
-      toast.error('Ошибка подключения');
+      toast.error(t('devDashboard.notifications.errorConnection'));
       setLoading(false);
     }
   };
@@ -79,14 +81,14 @@ const DeveloperDashboard = () => {
 
       if (error) {
         console.error('[Developer Dashboard] Error loading apps:', error);
-        toast.error('Не удалось загрузить приложения');
+        toast.error(t('devDashboard.notifications.errorLoadingApps'));
         return;
       }
 
       setDeveloperApps(data || []);
     } catch (err) {
       console.error('[Developer Dashboard] Error:', err);
-      toast.error('Ошибка подключения');
+      toast.error(t('devDashboard.notifications.errorConnection'));
     } finally {
       setLoading(false);
     }
@@ -110,8 +112,8 @@ const DeveloperDashboard = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Кабинет разработчика</h1>
-            <p className="text-muted-foreground">Управляйте своими приложениями</p>
+            <h1 className="text-3xl font-bold mb-2">{t('devDashboard.title')}</h1>
+            <p className="text-muted-foreground">{t('devDashboard.subtitle')}</p>
           </div>
           <Button 
             className="bg-gradient-to-r from-primary to-purple-600"
@@ -119,7 +121,7 @@ const DeveloperDashboard = () => {
             disabled={!devAccount || devAccount.status !== 'approved'}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Добавить приложение
+            {t('devDashboard.addApp')}
           </Button>
         </div>
 
@@ -130,15 +132,14 @@ const DeveloperDashboard = () => {
             <AlertDescription className="ml-2">
               <div className="space-y-2">
                 <p className="font-semibold text-yellow-900 dark:text-yellow-100">
-                  Ваш аккаунт разработчика находится на проверке
+                  {t('devDashboard.pendingBanner.title')}
                 </p>
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  Публикация приложений временно недоступна. Обычно проверка занимает 1–3 рабочих дня. 
-                  Пока что вы можете подготовить и сохранить приложения в черновиках.
+                  {t('devDashboard.pendingBanner.description')}
                 </p>
                 <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300 mt-2">
                   <Clock className="w-4 h-4" />
-                  <span>Ожидайте подтверждения от администрации</span>
+                  <span>{t('devDashboard.pendingBanner.waiting')}</span>
                 </div>
               </div>
             </AlertDescription>
@@ -149,7 +150,7 @@ const DeveloperDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Всего установок</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('devDashboard.stats.totalInstalls')}</CardTitle>
               <Download className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -158,30 +159,30 @@ const DeveloperDashboard = () => {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 <TrendingUp className="w-3 h-3 inline mr-1" />
-                +12.5% за месяц
+                {t('devDashboard.stats.monthGrowth')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Средний рейтинг</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('devDashboard.stats.avgRating')}</CardTitle>
               <Star className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{avgRating}</div>
-              <p className="text-xs text-muted-foreground mt-1">Из 5.0 возможных</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('devDashboard.stats.outOf')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Приложений</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('devDashboard.stats.apps')}</CardTitle>
               <Plus className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{developerApps.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">Опубликовано</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('devDashboard.stats.published')}</p>
             </CardContent>
           </Card>
         </div>
@@ -189,14 +190,14 @@ const DeveloperDashboard = () => {
         {/* Apps List */}
         <Card>
           <CardHeader>
-            <CardTitle>Ваши приложения</CardTitle>
+            <CardTitle>{t('devDashboard.appsList.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('devDashboard.appsList.loading')}</div>
             ) : developerApps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Пока нет приложений. Добавьте первое!
+                {t('devDashboard.appsList.empty')}
               </div>
             ) : (
               <div className="space-y-4">
@@ -219,22 +220,22 @@ const DeveloperDashboard = () => {
                       )}
                     </div>
                     
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-lg">{app.name || app.slug}</h3>
                         {app.verified && (
                           <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
-                            Опубликовано
+                            {t('devDashboard.appsList.statusPublished')}
                           </span>
                         )}
                         {!app.verified && (
                           <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full">
-                            Черновик
+                            {t('devDashboard.appsList.statusDraft')}
                           </span>
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                        {app.categories?.[0] || 'Приложение'}
+                        {app.categories?.[0] || t('devDashboard.appsList.categoryFallback')}
                       </span>
                     </div>
 
@@ -244,13 +245,13 @@ const DeveloperDashboard = () => {
                           <Star className="w-4 h-4 fill-accent text-accent" />
                           {app.rating.toFixed(1)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Рейтинг</p>
+                        <p className="text-xs text-muted-foreground">{t('devDashboard.appsList.rating')}</p>
                       </div>
                       <div className="text-center">
                         <div className="font-medium">
                           {app.installs >= 1000 ? `${(app.installs / 1000).toFixed(0)}K` : app.installs}
                         </div>
-                        <p className="text-xs text-muted-foreground">Установок</p>
+                        <p className="text-xs text-muted-foreground">{t('devDashboard.appsList.installs')}</p>
                       </div>
                     </div>
 
@@ -259,7 +260,7 @@ const DeveloperDashboard = () => {
                       size="sm"
                       onClick={() => navigate(`/developer/app/${app.id}`)}
                     >
-                      Редактировать
+                      {t('devDashboard.appsList.edit')}
                     </Button>
                   </div>
                 ))}

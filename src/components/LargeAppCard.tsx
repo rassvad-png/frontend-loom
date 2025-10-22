@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface LargeAppCardProps {
 export const LargeAppCard = ({ app }: LargeAppCardProps) => {
   const navigate = useNavigate();
   const { logEvent } = useAnalytics();
+  const { t } = useTranslation();
 
   // Only show if app has 2+ screenshots
   if (!app.screenshots || app.screenshots.length < 2) {
@@ -79,7 +81,7 @@ export const LargeAppCard = ({ app }: LargeAppCardProps) => {
               {index === displayedScreenshots.length - 1 && remainingCount > 0 && (
                 <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                   <span className="text-2xl font-bold text-primary">
-                    +{remainingCount}
+                    {t('largeAppCard.screenshotsRemaining', { count: remainingCount })}
                   </span>
                 </div>
               )}
@@ -129,7 +131,7 @@ export const LargeAppCard = ({ app }: LargeAppCardProps) => {
           onClick={handleInstall}
         >
           <Download className="w-5 h-5 mr-2" />
-          <span className="hidden md:inline">Установить</span>
+          <span className="hidden md:inline">{t('largeAppCard.install')}</span>
         </Button>
       </div>
     </Card>

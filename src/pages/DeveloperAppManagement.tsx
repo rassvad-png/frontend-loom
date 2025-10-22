@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ const DeveloperAppManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,7 +81,7 @@ const DeveloperAppManagement = () => {
       if (error) throw error;
       
       if (data.status !== 'approved') {
-        toast.error('Ваш аккаунт разработчика ещё не подтверждён');
+        toast.error(t('devAppManagement.notifications.accountNotApproved'));
         navigate('/developer');
         return;
       }
@@ -87,7 +89,7 @@ const DeveloperAppManagement = () => {
       setDevAccountId(data.id);
     } catch (err) {
       console.error('[Dev Account] Error:', err);
-      toast.error('Ошибка загрузки аккаунта разработчика');
+      toast.error(t('devAppManagement.notifications.errorLoadingAccount'));
       navigate('/developer');
     }
   };
@@ -154,7 +156,7 @@ const DeveloperAppManagement = () => {
 
     } catch (err) {
       console.error('[App Management] Error:', err);
-      toast.error('Ошибка загрузки приложения');
+      toast.error(t('devAppManagement.notifications.errorLoadingApp'));
     } finally {
       setLoading(false);
     }
@@ -162,14 +164,14 @@ const DeveloperAppManagement = () => {
 
   const handleImportManifest = async () => {
     if (!manifestUrl) {
-      toast.error('Введите URL манифеста');
+      toast.error(t('devAppManagement.notifications.errorManifestUrl'));
       return;
     }
 
     setImporting(true);
     try {
       const response = await fetch(manifestUrl);
-      if (!response.ok) throw new Error('Не удалось загрузить манифест');
+      if (!response.ok) throw new Error(t('devAppManagement.notifications.errorManifestFetch'));
       
       const manifest = await response.json();
       
@@ -190,10 +192,10 @@ const DeveloperAppManagement = () => {
         setCategory(manifest.categories[0]);
       }
 
-      toast.success('Манифест успешно импортирован');
+      toast.success(t('devAppManagement.notifications.manifestImported'));
     } catch (err) {
       console.error('[Manifest Import] Error:', err);
-      toast.error('Не удалось импортировать манифест');
+      toast.error(t('devAppManagement.notifications.errorImport'));
     } finally {
       setImporting(false);
     }
@@ -201,7 +203,7 @@ const DeveloperAppManagement = () => {
 
   const handleSave = async () => {
     if (!name || !category) {
-      toast.error('Заполните обязательные поля');
+      toast.error(t('devAppManagement.notifications.errorRequiredFields'));
       return;
     }
 
@@ -238,7 +240,7 @@ const DeveloperAppManagement = () => {
 
         if (transError) throw transError;
 
-        toast.success('Приложение успешно обновлено');
+        toast.success(t('devAppManagement.notifications.appUpdated'));
       } else {
         // Create new app
         const { data: newApp, error: insertError } = await supabase
@@ -267,14 +269,14 @@ const DeveloperAppManagement = () => {
             description: description
           });
 
-        toast.success('Приложение успешно создано');
+        toast.success(t('devAppManagement.notifications.appCreated'));
         navigate(`/developer/app/${newApp.id}`);
       }
 
       loadApp();
     } catch (err) {
       console.error('[Save App] Error:', err);
-      toast.error('Ошибка сохранения приложения');
+      toast.error(t('devAppManagement.notifications.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -291,11 +293,11 @@ const DeveloperAppManagement = () => {
 
       if (error) throw error;
 
-      toast.success('Приложение опубликовано');
+      toast.success(t('devAppManagement.notifications.appPublished'));
       loadApp();
     } catch (err) {
       console.error('[Publish] Error:', err);
-      toast.error('Ошибка публикации');
+      toast.error(t('devAppManagement.notifications.errorPublish'));
     }
   };
 
@@ -310,11 +312,11 @@ const DeveloperAppManagement = () => {
 
       if (error) throw error;
 
-      toast.success('Приложение снято с публикации');
+      toast.success(t('devAppManagement.notifications.appUnpublished'));
       loadApp();
     } catch (err) {
       console.error('[Unpublish] Error:', err);
-      toast.error('Ошибка снятия с публикации');
+      toast.error(t('devAppManagement.notifications.errorUnpublish'));
     }
   };
 
@@ -329,11 +331,11 @@ const DeveloperAppManagement = () => {
 
       if (error) throw error;
 
-      toast.success('Приложение удалено');
+      toast.success(t('devAppManagement.notifications.appDeleted'));
       navigate('/developer');
     } catch (err) {
       console.error('[Delete] Error:', err);
-      toast.error('Ошибка удаления');
+      toast.error(t('devAppManagement.notifications.errorDelete'));
     }
   };
 
@@ -355,20 +357,20 @@ const DeveloperAppManagement = () => {
         {/* Back Button */}
         <Link to="/developer" className="inline-flex items-center text-muted-foreground hover:text-primary mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Назад к кабинету разработчика
+          {t('devAppManagement.backToDashboard')}
         </Link>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              {app ? 'Управление приложением' : 'Создание приложения'}
+              {app ? t('devAppManagement.titleEdit') : t('devAppManagement.titleCreate')}
             </h1>
             {app && (
               <p className="text-muted-foreground">
-                Статус: {app.verified ? (
-                  <span className="text-green-600 font-medium">Опубликовано</span>
+                {t('devAppManagement.status')} {app.verified ? (
+                  <span className="text-green-600 font-medium">{t('devAppManagement.statusPublished')}</span>
                 ) : (
-                  <span className="text-yellow-600 font-medium">Черновик</span>
+                  <span className="text-yellow-600 font-medium">{t('devAppManagement.statusDraft')}</span>
                 )}
               </p>
             )}
@@ -378,14 +380,14 @@ const DeveloperAppManagement = () => {
             <div className="flex gap-2">
               {app.verified ? (
                 <Button variant="outline" onClick={handleUnpublish}>
-                  Снять с публикации
+                  {t('devAppManagement.unpublish')}
                 </Button>
               ) : (
                 <Button 
                   className="bg-gradient-to-r from-primary to-purple-600"
                   onClick={handlePublish}
                 >
-                  Опубликовать
+                  {t('devAppManagement.publish')}
                 </Button>
               )}
             </div>
@@ -399,7 +401,7 @@ const DeveloperAppManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Eye className="w-4 h-4 text-muted-foreground" />
-                  Просмотры
+                  {t('devAppManagement.stats.views')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -411,7 +413,7 @@ const DeveloperAppManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Download className="w-4 h-4 text-muted-foreground" />
-                  Установки
+                  {t('devAppManagement.stats.installs')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -423,7 +425,7 @@ const DeveloperAppManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <ThumbsUp className="w-4 h-4 text-muted-foreground" />
-                  Лайки
+                  {t('devAppManagement.stats.likes')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -435,7 +437,7 @@ const DeveloperAppManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                  Комментарии
+                  {t('devAppManagement.stats.comments')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -447,7 +449,7 @@ const DeveloperAppManagement = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Star className="w-4 h-4 text-accent fill-accent" />
-                  Рейтинг
+                  {t('devAppManagement.stats.rating')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -460,18 +462,18 @@ const DeveloperAppManagement = () => {
         {/* App Form */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Информация о приложении</CardTitle>
+            <CardTitle>{t('devAppManagement.form.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Step 1: Manifest Import */}
             <div className="space-y-2">
-              <Label htmlFor="manifestUrl">URL манифеста (необязательно)</Label>
+              <Label htmlFor="manifestUrl">{t('devAppManagement.form.manifestUrl')}</Label>
               <div className="flex gap-2">
                 <Input
                   id="manifestUrl"
                   value={manifestUrl}
                   onChange={(e) => setManifestUrl(e.target.value)}
-                  placeholder="https://myapp.com/manifest.json"
+                  placeholder={t('devAppManagement.form.manifestUrlPlaceholder')}
                 />
                 <Button 
                   variant="outline"
@@ -483,66 +485,66 @@ const DeveloperAppManagement = () => {
                   ) : (
                     <>
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      Импортировать
+                      {t('devAppManagement.form.import')}
                     </>
                   )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Импортируйте данные из manifest.json для автозаполнения полей
+                {t('devAppManagement.form.importHint')}
               </p>
             </div>
 
             {/* Basic Info */}
             <div className="space-y-2">
-              <Label htmlFor="name">Название приложения *</Label>
+              <Label htmlFor="name">{t('devAppManagement.form.name')}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Моё приложение"
+                placeholder={t('devAppManagement.form.namePlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Описание</Label>
+              <Label htmlFor="description">{t('devAppManagement.form.description')}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Подробное описание вашего приложения..."
+                placeholder={t('devAppManagement.form.descriptionPlaceholder')}
                 rows={4}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Категория *</Label>
+              <Label htmlFor="category">{t('devAppManagement.form.category')}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите категорию" />
+                  <SelectValue placeholder={t('devAppManagement.form.categoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ai">AI</SelectItem>
-                  <SelectItem value="crypto">Crypto</SelectItem>
-                  <SelectItem value="games">Игры</SelectItem>
-                  <SelectItem value="business">Бизнес</SelectItem>
-                  <SelectItem value="utilities">Утилиты</SelectItem>
-                  <SelectItem value="productivity">Продуктивность</SelectItem>
-                  <SelectItem value="lifestyle">Образ жизни</SelectItem>
-                  <SelectItem value="music">Музыка</SelectItem>
+                  <SelectItem value="ai">{t('devAppManagement.categories.ai')}</SelectItem>
+                  <SelectItem value="crypto">{t('devAppManagement.categories.crypto')}</SelectItem>
+                  <SelectItem value="games">{t('devAppManagement.categories.games')}</SelectItem>
+                  <SelectItem value="business">{t('devAppManagement.categories.business')}</SelectItem>
+                  <SelectItem value="utilities">{t('devAppManagement.categories.utilities')}</SelectItem>
+                  <SelectItem value="productivity">{t('devAppManagement.categories.productivity')}</SelectItem>
+                  <SelectItem value="lifestyle">{t('devAppManagement.categories.lifestyle')}</SelectItem>
+                  <SelectItem value="music">{t('devAppManagement.categories.music')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="installUrl">URL приложения</Label>
+              <Label htmlFor="installUrl">{t('devAppManagement.form.installUrl')}</Label>
               <Input
                 id="installUrl"
                 value={installUrl}
                 onChange={(e) => setInstallUrl(e.target.value)}
                 type="url"
-                placeholder="https://myapp.com"
+                placeholder={t('devAppManagement.form.installUrlPlaceholder')}
               />
             </div>
 
@@ -556,10 +558,10 @@ const DeveloperAppManagement = () => {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Сохранение...
+                    {t('devAppManagement.form.saving')}
                   </>
                 ) : (
-                  'Сохранить'
+                  t('devAppManagement.form.save')
                 )}
               </Button>
 
@@ -567,20 +569,20 @@ const DeveloperAppManagement = () => {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive">
-                      Удалить приложение
+                      {t('devAppManagement.form.delete')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('devAppManagement.deleteDialog.title')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Это действие нельзя отменить. Приложение и все связанные данные будут удалены навсегда.
+                        {t('devAppManagement.deleteDialog.description')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogCancel>{t('devAppManagement.deleteDialog.cancel')}</AlertDialogCancel>
                       <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-                        Удалить
+                        {t('devAppManagement.deleteDialog.confirm')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

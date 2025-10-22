@@ -140,11 +140,7 @@ const Index = () => {
             Array.from({ length: 2 }).map((_, i) => (
               <FeaturedCardSkeleton key={i} />
             ))
-          ) : (
-            apps.slice(6, 8).map((app) => (
-              <FeaturedCard key={app.id} app={app} />
-            ))
-          )}
+          ) : null}
         </section>
 
         {/* Essentials Section */}

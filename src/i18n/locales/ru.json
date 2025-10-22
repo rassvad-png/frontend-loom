@@ -117,5 +117,113 @@
       "cancel": "Отмена",
       "apply": "Применить"
     }
+  },
+  "devDashboard": {
+    "title": "Кабинет разработчика",
+    "subtitle": "Управляйте своими приложениями",
+    "addApp": "Добавить приложение",
+    "pendingBanner": {
+      "title": "Ваш аккаунт разработчика находится на проверке",
+      "description": "Публикация приложений временно недоступна. Обычно проверка занимает 1–3 рабочих дня. Пока что вы можете подготовить и сохранить приложения в черновиках.",
+      "waiting": "Ожидайте подтверждения от администрации"
+    },
+    "stats": {
+      "totalInstalls": "Всего установок",
+      "monthGrowth": "+12.5% за месяц",
+      "avgRating": "Средний рейтинг",
+      "outOf": "Из 5.0 возможных",
+      "apps": "Приложений",
+      "published": "Опубликовано"
+    },
+    "appsList": {
+      "title": "Ваши приложения",
+      "loading": "Загрузка...",
+      "empty": "Пока нет приложений. Добавьте первое!",
+      "statusPublished": "Опубликовано",
+      "statusDraft": "Черновик",
+      "categoryFallback": "Приложение",
+      "rating": "Рейтинг",
+      "installs": "Установок",
+      "edit": "Редактировать"
+    },
+    "notifications": {
+      "errorLoadingAccount": "Ошибка загрузки аккаунта разработчика",
+      "errorConnection": "Ошибка подключения",
+      "errorLoadingApps": "Не удалось загрузить приложения"
+    }
+  },
+  "devAppManagement": {
+    "backToDashboard": "Назад к кабинету разработчика",
+    "titleEdit": "Управление приложением",
+    "titleCreate": "Создание приложения",
+    "status": "Статус:",
+    "statusPublished": "Опубликовано",
+    "statusDraft": "Черновик",
+    "unpublish": "Снять с публикации",
+    "publish": "Опубликовать",
+    "stats": {
+      "views": "Просмотры",
+      "installs": "Установки",
+      "likes": "Лайки",
+      "comments": "Комментарии",
+      "rating": "Рейтинг"
+    },
+    "form": {
+      "title": "Информация о приложении",
+      "manifestUrl": "URL манифеста (необязательно)",
+      "manifestUrlPlaceholder": "https://myapp.com/manifest.json",
+      "import": "Импортировать",
+      "importHint": "Импортируйте данные из manifest.json для автозаполнения полей",
+      "name": "Название приложения *",
+      "namePlaceholder": "Моё приложение",
+      "description": "Описание",
+      "descriptionPlaceholder": "Подробное описание вашего приложения...",
+      "category": "Категория *",
+      "categoryPlaceholder": "Выберите категорию",
+      "installUrl": "URL приложения",
+      "installUrlPlaceholder": "https://myapp.com",
+      "save": "Сохранить",
+      "saving": "Сохранение...",
+      "delete": "Удалить приложение"
+    },
+    "categories": {
+      "ai": "AI",
+      "crypto": "Crypto",
+      "games": "Игры",
+      "business": "Бизнес",
+      "utilities": "Утилиты",
+      "productivity": "Продуктивность",
+      "lifestyle": "Образ жизни",
+      "music": "Музыка"
+    },
+    "deleteDialog": {
+      "title": "Вы уверены?",
+      "description": "Это действие нельзя отменить. Приложение и все связанные данные будут удалены навсегда.",
+      "cancel": "Отмена",
+      "confirm": "Удалить"
+    },
+    "notifications": {
+      "accountNotApproved": "Ваш аккаунт разработчика ещё не подтверждён",
+      "errorLoadingAccount": "Ошибка загрузки аккаунта разработчика",
+      "errorLoadingApp": "Ошибка загрузки приложения",
+      "errorManifestUrl": "Введите URL манифеста",
+      "errorManifestFetch": "Не удалось загрузить манифест",
+      "manifestImported": "Манифест успешно импортирован",
+      "errorImport": "Не удалось импортировать манифест",
+      "errorRequiredFields": "Заполните обязательные поля",
+      "appUpdated": "Приложение успешно обновлено",
+      "appCreated": "Приложение успешно создано",
+      "errorSave": "Ошибка сохранения приложения",
+      "appPublished": "Приложение опубликовано",
+      "errorPublish": "Ошибка публикации",
+      "appUnpublished": "Приложение снято с публикации",
+      "errorUnpublish": "Ошибка снятия с публикации",
+      "appDeleted": "Приложение удалено",
+      "errorDelete": "Ошибка удаления"
+    }
+  },
+  "largeAppCard": {
+    "install": "Установить",
+    "screenshotsRemaining": "+{{count}}"
   }
 }
