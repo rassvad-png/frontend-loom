@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Star, Download, Eye, MessageSquare, ThumbsUp, Upload, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
+import { apiClient } from '@/lib/api';
 import { useAuth } from "@/hooks/useAuth";
+import { useUserLanguage } from '@/store/hooks';
 
 interface AppStats {
   views: number;
@@ -41,6 +42,7 @@ const DeveloperAppManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const userLanguage = useUserLanguage();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,21 +74,15 @@ const DeveloperAppManagement = () => {
 
   const loadDevAccount = async () => {
     try {
-      const { data, error } = await supabase
-        .from('dev_accounts')
-        .select('id, status')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) throw error;
+      const devAccount = await apiClient.getDevAccount(user?.id || '');
       
-      if (data.status !== 'approved') {
+      if (!devAccount || devAccount.status !== 'approved') {
         toast.error(t('devAppManagement.notifications.accountNotApproved'));
         navigate('/developer');
         return;
       }
 
-      setDevAccountId(data.id);
+      setDevAccountId(devAccount.id);
     } catch (err) {
       console.error('[Dev Account] Error:', err);
       toast.error(t('devAppManagement.notifications.errorLoadingAccount'));
@@ -99,60 +95,43 @@ const DeveloperAppManagement = () => {
 
     setLoading(true);
     try {
-      const { data: appData, error: appError } = await supabase
-        .from('apps')
-        .select('*')
-        .eq('id', id)
-        .eq('dev_account_id', devAccountId)
-        .single();
-
-      if (appError) throw appError;
+      const appData = await apiClient.getApp(id);
       
-      setApp(appData);
+      if (!appData) {
+        setApp(null);
+        return;
+      }
+
+      setApp({
+        id: appData.id,
+        slug: appData.slug,
+        name: appData.name,
+        icon_url: appData.icon,
+        screenshots: appData.screenshots,
+        categories: [appData.category],
+        verified: appData.verified || false,
+        manifest_url: appData.installUrl,
+        install_url: appData.installUrl,
+        dev_account_id: devAccountId,
+        url: appData.installUrl
+      });
       
       // Load translations
-      const { data: translations } = await supabase
-        .from('app_translations')
-        .select('*')
-        .eq('app_id', id)
-        .eq('lang', 'ru')
-        .maybeSingle();
+      const translations = await apiClient.getAppTranslations([id], userLanguage);
+      const translation = translations[0];
 
-      if (translations) {
-        setName(translations.tagline || appData.name || '');
-        setDescription(translations.description || '');
+      if (translation) {
+        setName(translation.tagline || appData.name || '');
+        setDescription(translation.description || '');
       }
       
-      setManifestUrl(appData.manifest_url || '');
-      setCategory(appData.categories?.[0] || '');
-      setInstallUrl(appData.install_url || '');
+      setManifestUrl(appData.installUrl || '');
+      setCategory(appData.category || '');
+      setInstallUrl(appData.installUrl || '');
 
       // Load stats
-      const { data: analytics } = await supabase
-        .from('analytics')
-        .select('event')
-        .eq('app_id', id);
-
-      const { count: likesCount } = await supabase
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('app_id', id);
-
-      const { count: commentsCount } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('app_id', id);
-
-      const views = analytics?.filter(a => a.event === 'view').length || 0;
-      const installs = analytics?.filter(a => a.event === 'install').length || 0;
-
-      setStats({
-        views,
-        installs,
-        likes: likesCount || 0,
-        comments: commentsCount || 0,
-        rating: appData.rating || 0
-      });
+      const stats = await apiClient.getAppStats(id);
+      setStats(stats);
 
     } catch (err) {
       console.error('[App Management] Error:', err);
@@ -213,61 +192,43 @@ const DeveloperAppManagement = () => {
       
       if (id && app) {
         // Update existing app
-        const { error: updateError } = await supabase
-          .from('apps')
-          .update({
-            slug,
-            name,
-            categories: [category],
-            manifest_url: manifestUrl || null,
-            install_url: installUrl || null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id);
-
-        if (updateError) throw updateError;
+        await apiClient.updateApp(id, {
+          slug,
+          name,
+          category,
+          installUrl: installUrl || undefined
+        });
 
         // Update translations
-        const { error: transError } = await supabase
-          .from('app_translations')
-          .upsert({
-            app_id: id,
-            lang: 'ru',
-            tagline: name,
-            description: description,
-            updated_at: new Date().toISOString()
-          });
-
-        if (transError) throw transError;
+        await apiClient.updateAppTranslations(id, userLanguage, {
+          tagline: name,
+          description: description
+        });
 
         toast.success(t('devAppManagement.notifications.appUpdated'));
       } else {
         // Create new app
-        const { data: newApp, error: insertError } = await supabase
-          .from('apps')
-          .insert({
-            slug,
-            name,
-            dev_account_id: devAccountId,
-            categories: [category],
-            manifest_url: manifestUrl || null,
-            install_url: installUrl || null,
-            verified: false
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
+        const newApp = await apiClient.createApp({
+          slug,
+          name,
+          description,
+          fullDescription: description,
+          icon: '/placeholder.svg',
+          category,
+          rating: 0,
+          installs: 0,
+          screenshots: [],
+          installUrl: installUrl || undefined,
+          dev_account_id: devAccountId!
+        });
 
         // Create translations
-        await supabase
-          .from('app_translations')
-          .insert({
-            app_id: newApp.id,
-            lang: 'ru',
-            tagline: name,
-            description: description
-          });
+        await apiClient.createAppTranslation({
+          app_id: newApp.id,
+          lang: userLanguage,
+          tagline: name,
+          description: description
+        });
 
         toast.success(t('devAppManagement.notifications.appCreated'));
         navigate(`/developer/app/${newApp.id}`);
@@ -286,12 +247,7 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      const { error } = await supabase
-        .from('apps')
-        .update({ verified: true })
-        .eq('id', app.id);
-
-      if (error) throw error;
+      await apiClient.publishApp(app.id);
 
       toast.success(t('devAppManagement.notifications.appPublished'));
       loadApp();
@@ -305,12 +261,7 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      const { error } = await supabase
-        .from('apps')
-        .update({ verified: false })
-        .eq('id', app.id);
-
-      if (error) throw error;
+      await apiClient.unpublishApp(app.id);
 
       toast.success(t('devAppManagement.notifications.appUnpublished'));
       loadApp();
@@ -324,12 +275,7 @@ const DeveloperAppManagement = () => {
     if (!app) return;
 
     try {
-      const { error } = await supabase
-        .from('apps')
-        .delete()
-        .eq('id', app.id);
-
-      if (error) throw error;
+      await apiClient.deleteApp(app.id);
 
       toast.success(t('devAppManagement.notifications.appDeleted'));
       navigate('/developer');

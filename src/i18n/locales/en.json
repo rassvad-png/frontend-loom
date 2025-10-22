@@ -1,4 +1,12 @@
 {
+  "layout": {
+    "profile": "Profile",
+    "settings": "Settings", 
+    "actions": "Actions",
+    "devAccount": "Developer Account",
+    "signOut": "Sign Out",
+    "signIn": "Sign In"
+  },
   "developer": {
     "title": "Create Developer Account",
     "description": "Fill out the form to register a developer account. Your application will be reviewed within 24 hours.",
@@ -225,5 +233,32 @@
   "largeAppCard": {
     "install": "Install",
     "screenshotsRemaining": "+{{count}}"
+  },
+  "appDetails": {
+    "backToCatalog": "Back to catalog",
+    "installApp": "Install application",
+    "rating": "Rating",
+    "installs": "Installs",
+    "screenshots": "Screenshots",
+    "description": "Description",
+    "whatsNew": "What's New",
+    "statistics": "Statistics",
+    "outOf": "out of 5.0 possible",
+    "total": "total",
+    "category": "Category",
+    "progressiveWebApp": "Progressive Web App",
+    "userReviews": "User Reviews",
+    "noReviews": "No reviews for this application yet",
+    "support": "Support",
+    "developerWebsite": "Developer website",
+    "privacyPolicy": "Privacy policy",
+    "youMightAlsoLike": "You Might Also Like",
+    "all": "All",
+    "similarApp": "Similar application",
+    "anotherApp": "Another application",
+    "thirdApp": "Third application",
+    "appNotFound": "Application not found",
+    "returnHome": "Return to home",
+    "defaultWhatsNew": "We regularly update the app to fix bugs, optimize performance and improve the user experience."
   }
 }

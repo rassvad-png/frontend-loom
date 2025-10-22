@@ -1,4 +1,12 @@
 {
+  "layout": {
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "actions": "Действия", 
+    "devAccount": "Аккаунт разработчика",
+    "signOut": "Выйти",
+    "signIn": "Войти"
+  },
   "developer": {
     "title": "Создать аккаунт разработчика",
     "description": "Заполните форму для регистрации аккаунта разработчика. Ваша заявка будет рассмотрена в течение 24 часов.",
@@ -225,5 +233,32 @@
   "largeAppCard": {
     "install": "Установить",
     "screenshotsRemaining": "+{{count}}"
+  },
+  "appDetails": {
+    "backToCatalog": "Назад к каталогу",
+    "installApp": "Установить приложение",
+    "rating": "Рейтинг",
+    "installs": "Установок",
+    "screenshots": "Скриншоты",
+    "description": "Описание",
+    "whatsNew": "Что нового",
+    "statistics": "Статистика",
+    "outOf": "из 5.0 возможных",
+    "total": "всего",
+    "category": "Категория",
+    "progressiveWebApp": "Progressive Web App",
+    "userReviews": "Отзывы пользователей",
+    "noReviews": "Пока нет отзывов для этого приложения",
+    "support": "Поддержка",
+    "developerWebsite": "Сайт разработчика",
+    "privacyPolicy": "Политика конфиденциальности",
+    "youMightAlsoLike": "Вам также может понравиться",
+    "all": "Все",
+    "similarApp": "Похожее приложение",
+    "anotherApp": "Еще одно приложение",
+    "thirdApp": "Третье приложение",
+    "appNotFound": "Приложение не найдено",
+    "returnHome": "Вернуться на главную",
+    "defaultWhatsNew": "Мы регулярно обновляем приложение для исправления ошибок, оптимизации производительности и улучшения пользовательского опыта."
   }
 }

@@ -3,6 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Provider } from "jotai";
+import { LanguageInitializer } from "@/components/LanguageInitializer";
+import { ProfileInitializer } from "@/components/ProfileInitializer";
 import Index from "./pages/Index";
 import Games from "./pages/Games";
 import Apps from "./pages/Apps";
@@ -16,27 +19,31 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/games" element={<Games />} />
-          <Route path="/apps" element={<Apps />} />
-          <Route path="/app/:slug" element={<AppDetails />} />
-          <Route path="/developer" element={<DeveloperDashboard />} />
-          <Route path="/developer-account" element={<DeveloperDashboard />} />
-          <Route path="/developer/app/:id" element={<DeveloperAppManagement />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={<Profile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <Provider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <LanguageInitializer />
+        <ProfileInitializer />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/games" element={<Games />} />
+            <Route path="/apps" element={<Apps />} />
+            <Route path="/app/:slug" element={<AppDetails />} />
+            <Route path="/developer" element={<DeveloperDashboard />} />
+            <Route path="/developer-account" element={<DeveloperDashboard />} />
+            <Route path="/developer/app/:id" element={<DeveloperAppManagement />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </Provider>
 );
 
 export default App;

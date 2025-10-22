@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, Star, Download, TrendingUp, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
+import { apiClient } from '@/lib/api';
 import { useAuth } from "@/hooks/useAuth";
 
 interface DeveloperApp {
@@ -45,22 +45,18 @@ const DeveloperDashboard = () => {
 
   const loadDevAccount = async () => {
     try {
-      const { data, error } = await supabase
-        .from('dev_accounts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .maybeSingle();
+      const devAccount = await apiClient.getDevAccount(user?.id || '');
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('[Dev Account] Error:', error);
+      if (!devAccount) {
+        console.error('[Dev Account] No account found');
         toast.error(t('devDashboard.notifications.errorLoadingAccount'));
         return;
       }
 
-      setDevAccount(data);
+      setDevAccount(devAccount);
       
-      if (data) {
-        loadDeveloperApps(data.id);
+      if (devAccount) {
+        loadDeveloperApps(devAccount.id);
       } else {
         setLoading(false);
       }
@@ -73,19 +69,8 @@ const DeveloperDashboard = () => {
 
   const loadDeveloperApps = async (devAccountId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('apps')
-        .select('id, slug, name, icon_url, rating, installs, categories, verified')
-        .eq('dev_account_id', devAccountId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('[Developer Dashboard] Error loading apps:', error);
-        toast.error(t('devDashboard.notifications.errorLoadingApps'));
-        return;
-      }
-
-      setDeveloperApps(data || []);
+      const apps = await apiClient.getDeveloperApps(devAccountId);
+      setDeveloperApps(apps);
     } catch (err) {
       console.error('[Developer Dashboard] Error:', err);
       toast.error(t('devDashboard.notifications.errorConnection'));

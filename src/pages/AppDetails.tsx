@@ -1,20 +1,25 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, Download, ArrowLeft, ExternalLink } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Star, Download, ArrowLeft, ExternalLink, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabaseClient";
+import { apiClient } from "@/lib/api";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useUserLanguage } from "@/store/hooks";
+import { useAppTranslations } from '@/hooks/useAppTranslations';
 
 interface AppData {
   id: string;
   slug: string;
   name: string;
+  tagline: string;
   description: string;
   fullDescription: string;
+  whatsNew?: string;
   icon: string;
   category: string;
   rating: number;
@@ -25,9 +30,12 @@ interface AppData {
 
 const AppDetails = () => {
   const { slug } = useParams();
+  const { t } = useTranslation();
+  const userLanguage = useUserLanguage();
   const { logEvent } = useAnalytics();
   const [app, setApp] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [appId, setAppId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAppDetails();
@@ -38,59 +46,53 @@ const AppDetails = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('apps')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-
-      if (error || !data) {
-        console.error('[App Details] Error:', error);
+      const app = await apiClient.getApp(slug);
+      
+      if (!app) {
         setApp(null);
-      } else {
-        // Load translations for name and description
-        const { data: translations } = await supabase
-          .from('translations')
-          .select('*')
-          .eq('entity_type', 'app')
-          .eq('entity_id', data.id)
-          .eq('lang', 'ru');
-
-        const getName = () => {
-          const nameTranslation = translations?.find(t => t.key === 'name');
-          return nameTranslation?.value || data.slug;
-        };
-
-        const getDescription = () => {
-          const descTranslation = translations?.find(t => t.key === 'description');
-          return descTranslation?.value || data.slug;
-        };
-
-        // Map Supabase data to app format
-        setApp({
-          id: data.id,
-          slug: data.slug,
-          name: getName(),
-          description: getDescription(),
-          fullDescription: getDescription(),
-          icon: data.icon_url || '/placeholder.svg',
-          category: data.categories?.[0] || 'App',
-          rating: data.rating || 0,
-          installs: data.installs || 0,
-          screenshots: data.screenshots || [],
-          installUrl: data.install_url
-        });
+        setAppId(null);
+        return;
       }
 
+      // Set basic app data first
+      setApp({
+        ...app,
+        name: app.name || app.slug,
+        tagline: app.slug,
+        description: app.slug,
+        fullDescription: app.slug,
+        whatsNew: t('appDetails.defaultWhatsNew'),
+      });
+      setAppId(app.id);
+
       // Log view event
-      await logEvent(data?.id || slug, 'view', { source: 'app_details' });
+      await logEvent(app.id, 'view', { source: 'app_details' });
     } catch (err) {
       console.error('[App Details] Error:', err);
       setApp(null);
+      setAppId(null);
     } finally {
       setLoading(false);
     }
   };
+
+  // Get translations for the current app
+  const { translations } = useAppTranslations(appId ? [appId] : []);
+
+  // Apply translations when they change
+  useEffect(() => {
+    if (app && translations.length > 0) {
+      const translation = translations[0];
+      setApp(prevApp => prevApp ? {
+        ...prevApp,
+        name: translation?.tagline || prevApp.name || prevApp.slug,
+        tagline: translation?.tagline || prevApp.slug,
+        description: translation?.description || prevApp.slug,
+        fullDescription: translation?.description || prevApp.slug,
+        whatsNew: translation?.whats_new || t('appDetails.defaultWhatsNew'),
+      } : null);
+    }
+  }, [translations, app, t]);
 
   const handleInstall = async () => {
     if (!app) return;
@@ -135,11 +137,11 @@ const AppDetails = () => {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Приложение не найдено</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('appDetails.appNotFound')}</h1>
           <Link to="/">
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Вернуться на главную
+              {t('appDetails.returnHome')}
             </Button>
           </Link>
         </div>
@@ -155,162 +157,215 @@ const AppDetails = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Back Button */}
         <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-primary mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Назад к каталогу
+          {t('appDetails.backToCatalog')}
         </Link>
 
         {/* App Header */}
-        <Card className="mb-8">
-          <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* App Icon */}
-              <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xl">
-                <img 
-                  src={app.icon} 
-                  alt={app.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="128"%3E%3Crect width="128" height="128" fill="%23e0e7ff"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="48" fill="%236366f1"%3E${app.name[0]}%3C/text%3E%3C/svg%3E`;
-                  }}
-                />
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* App Icon */}
+            <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-xl">
+              <img 
+                src={app.icon} 
+                alt={app.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="128"%3E%3Crect width="128" height="128" fill="%23e0e7ff"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="48" fill="%236366f1"%3E${app.name[0]}%3C/text%3E%3C/svg%3E`;
+                }}
+              />
+            </div>
+
+            {/* App Info */}
+            <div className="flex-1">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{app.name}</h1>
+                  <Badge variant="secondary" className="text-sm mb-3">
+                    {app.category}
+                  </Badge>
+                  <p className="text-lg text-muted-foreground mb-4">{app.tagline}</p>
+                </div>
               </div>
 
-              {/* App Info */}
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold mb-2">{app.name}</h1>
-                    <Badge variant="secondary" className="text-sm">
-                      {app.category}
-                    </Badge>
+              {/* Stats */}
+              <div className="flex flex-wrap gap-6 mb-6">
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Star className="w-5 h-5 fill-accent text-accent" />
+                    <span className="text-2xl font-bold">{app.rating.toFixed(1)}</span>
                   </div>
+                  <p className="text-sm text-muted-foreground">{t('appDetails.rating')}</p>
                 </div>
-
-                <p className="text-muted-foreground mb-6">{app.description}</p>
-
-                {/* Stats */}
-                <div className="flex flex-wrap gap-6 mb-6">
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Star className="w-5 h-5 fill-accent text-accent" />
-                      <span className="text-2xl font-bold">{app.rating.toFixed(1)}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Рейтинг</p>
+                <div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Download className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{formatInstalls(app.installs)}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Download className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-2xl font-bold">{formatInstalls(app.installs)}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Установок</p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">{t('appDetails.installs')}</p>
                 </div>
+              </div>
 
-                {/* Action Button */}
-                <Button 
-                  size="lg" 
-                  className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 w-full md:w-auto"
-                  onClick={handleInstall}
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Установить приложение
-                </Button>
+              {/* Action Button */}
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 w-full md:w-auto"
+                onClick={handleInstall}
+              >
+                <Download className="w-5 h-5 mr-2" />
+                {t('appDetails.installApp')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Screenshots - Full Width Horizontal Scroll */}
+        {app.screenshots && app.screenshots.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4">{t('appDetails.screenshots')}</h2>
+            <div className="overflow-x-auto">
+              <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+                {app.screenshots.map((screenshot, index) => (
+                  <div 
+                    key={index} 
+                    className="flex-shrink-0 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                    style={{ width: '280px', height: '600px' }}
+                  >
+                    <img
+                      src={screenshot}
+                      alt={`Screenshot ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Screenshots */}
+        {/* Description */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{t('appDetails.description')}</h2>
+          <p className="text-muted-foreground leading-relaxed text-lg">
+            {app.fullDescription}
+          </p>
+        </div>
+
+        {/* What's New */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{t('appDetails.whatsNew')}</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            {app.whatsNew}
+          </p>
+        </div>
+
+        {/* Statistics */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{t('appDetails.statistics')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Скриншоты</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {app.screenshots?.map((screenshot, index) => (
-                    <div key={index} className="rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow">
-                      <img
-                        src={screenshot}
-                        alt={`Screenshot ${index + 1}`}
-                        className="w-full h-64 object-cover"
-                      />
-                    </div>
-                  ))}
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Star className="w-6 h-6 fill-accent text-accent" />
+                  <span className="text-3xl font-bold">{app.rating.toFixed(1)}</span>
                 </div>
+                <p className="text-sm text-muted-foreground">{t('appDetails.rating')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('appDetails.outOf')}</p>
               </CardContent>
             </Card>
-
-            {/* Description */}
             <Card>
-              <CardHeader>
-                <CardTitle>Описание</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {app.fullDescription}
-                </p>
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center gap-1 mb-2">
+                  <Download className="w-6 h-6 text-muted-foreground" />
+                  <span className="text-3xl font-bold">{formatInstalls(app.installs)}+</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{t('appDetails.installs')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('appDetails.total')}</p>
               </CardContent>
             </Card>
-
-            {/* Reviews */}
             <Card>
-              <CardHeader>
-                <CardTitle>Отзывы пользователей</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Пока нет отзывов для этого приложения
-                </p>
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold mb-2">{app.category}</div>
+                <p className="text-sm text-muted-foreground">{t('appDetails.category')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('appDetails.progressiveWebApp')}</p>
               </CardContent>
             </Card>
           </div>
+        </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Информация</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground mb-1">Категория</p>
-                  <p className="font-medium">{app.category}</p>
+        {/* Reviews */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{t('appDetails.userReviews')}</h2>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">
+                {t('appDetails.noReviews')}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Support */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">{t('appDetails.support')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button variant="outline" className="w-full justify-start h-12">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              {t('appDetails.developerWebsite')}
+            </Button>
+            <Button variant="outline" className="w-full justify-start h-12">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              {t('appDetails.privacyPolicy')}
+            </Button>
+          </div>
+        </div>
+
+        {/* You Might Also Like */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">{t('appDetails.youMightAlsoLike')}</h2>
+            <Button variant="ghost" className="text-primary">
+              {t('appDetails.all')}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Placeholder for similar apps */}
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-blue-600">A</span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground mb-1">Установок</p>
-                  <p className="font-medium">{formatInstalls(app.installs)}+</p>
+                <div className="flex-1">
+                  <h3 className="font-medium">{t('appDetails.similarApp')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('appDetails.category')}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground mb-1">Рейтинг</p>
-                  <p className="font-medium">{app.rating} ⭐</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground mb-1">Тип</p>
-                  <p className="font-medium">Progressive Web App</p>
-                </div>
-              </CardContent>
+              </div>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Поддержка</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Сайт разработчика
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Политика конфиденциальности
-                </Button>
-              </CardContent>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-green-600">B</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium">{t('appDetails.anotherApp')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('appDetails.category')}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-purple-600">C</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium">{t('appDetails.thirdApp')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('appDetails.category')}</p>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

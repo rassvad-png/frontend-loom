@@ -5,68 +5,56 @@ import { AppListItem } from "@/components/AppListItem";
 import { BottomNav } from "@/components/BottomNav";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mockApps } from "@/data/mockApps";
-import { supabase } from "@/lib/supabaseClient";
+import { apiClient } from "@/lib/api";
+import { useUserLanguage } from "@/store/hooks";
+import { useAppTranslations } from '@/hooks/useAppTranslations';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("today");
   const [apps, setApps] = useState(mockApps);
   const [loading, setLoading] = useState(true);
+  const [appIds, setAppIds] = useState<string[]>([]);
+  const userLanguage = useUserLanguage();
+
+  const loadApps = async () => {
+    try {
+      const apps = await apiClient.getApps(5);
+
+      if (apps && apps.length > 0) {
+        const appsWithReviews = apps.map(app => ({
+          ...app,
+          reviews: [] // Add missing reviews field
+        }));
+        setApps(appsWithReviews);
+        setAppIds(apps.map(app => app.id));
+      }
+    } catch (err: any) {
+      console.error('[Supabase] Connection error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const { translations } = useAppTranslations(appIds);
+
+  // Apply translations to apps when translations change
+  useEffect(() => {
+    if (translations.length > 0) {
+      setApps(prevApps => 
+        prevApps.map(app => {
+          const appTranslation = translations.find(t => t.app_id === app.id);
+          return {
+            ...app,
+            name: appTranslation?.tagline || app.name || app.slug,
+            description: appTranslation?.description || app.slug,
+            fullDescription: appTranslation?.description || app.slug,
+          };
+        })
+      );
+    }
+  }, [translations]);
 
   useEffect(() => {
-    const loadApps = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('apps')
-          .select('*')
-          .limit(5);
-
-        if (error) {
-          console.error('[Supabase] Error loading apps:', error);
-          return;
-        }
-
-        console.log('[Supabase] Connected successfully');
-        console.log('[Supabase] Apps count:', data?.length || 0);
-
-        if (data && data.length > 0) {
-          // Load translations for all apps
-          const appIds = data.map(app => app.id);
-          const { data: translations } = await supabase
-            .from('translations')
-            .select('*')
-            .eq('entity_type', 'app')
-            .in('entity_id', appIds)
-            .eq('lang', 'ru');
-
-          // Map Supabase data to app format
-          const supabaseApps = data.map((app: any) => {
-            const appTranslations = translations?.filter(t => t.entity_id === app.id) || [];
-            const nameTranslation = appTranslations.find(t => t.key === 'name');
-            const descTranslation = appTranslations.find(t => t.key === 'description');
-
-            return {
-              id: app.id,
-              slug: app.slug,
-              name: nameTranslation?.value || app.slug,
-              description: descTranslation?.value || app.slug,
-              fullDescription: descTranslation?.value || app.slug,
-              icon: app.icon_url || '/placeholder.svg',
-              category: app.categories?.[0] || 'App',
-              rating: app.rating || 0,
-              installs: app.installs || 0,
-              screenshots: app.screenshots || [],
-              reviews: []
-            };
-          });
-          setApps(supabaseApps);
-        }
-      } catch (err: any) {
-        console.error('[Supabase] Connection error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadApps();
   }, []);
 

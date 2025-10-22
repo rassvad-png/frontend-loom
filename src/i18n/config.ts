@@ -6,9 +6,9 @@ import en from './locales/en.json';
 // Get initial language safely
 const getInitialLanguage = () => {
   try {
-    return localStorage.getItem('language') || 'ru';
+    return localStorage.getItem('language') || 'en';
   } catch {
-    return 'ru';
+    return 'en';
   }
 };
 
@@ -20,7 +20,7 @@ i18n
       en: { translation: en },
     },
     lng: getInitialLanguage(),
-    fallbackLng: 'ru',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },

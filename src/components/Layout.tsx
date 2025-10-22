@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Store,
   Search,
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
+import { apiClient } from '@/lib/api';
 import { DeveloperAccountDialog } from '@/components/DeveloperAccountDialog';
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ interface LayoutProps {
 
 export const Layout = ({ children, onSearch }: LayoutProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [devAccount, setDevAccount] = useState<any>(null);
@@ -45,13 +47,12 @@ export const Layout = ({ children, onSearch }: LayoutProps) => {
     const loadDevAccount = async () => {
       if (!user) return;
 
-      const { data } = await supabase
-        .from('dev_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      setDevAccount(data);
+      try {
+        const devAccount = await apiClient.getDevAccount(user.id);
+        setDevAccount(devAccount);
+      } catch (error) {
+        console.error('Error loading dev account:', error);
+      }
     };
 
     loadDevAccount();
@@ -130,28 +131,28 @@ export const Layout = ({ children, onSearch }: LayoutProps) => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="w-4 h-4 mr-2" />
-                      Профиль
+                      {t('layout.profile')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate('/profile?tab=settings')}
                     >
                       <Settings className="w-4 h-4 mr-2" />
-                      Настройки
+                      {t('layout.settings')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate('/profile?tab=actions')}
                     >
                       <Star className="w-4 h-4 mr-2" />
-                      Действия
+                      {t('layout.actions')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleDevAccountClick}>
                       <Code className="w-4 h-4 mr-2" />
-                      Аккаунт разработчика
+                      {t('layout.devAccount')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
-                      Выйти
+                      {t('layout.signOut')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -163,7 +164,7 @@ export const Layout = ({ children, onSearch }: LayoutProps) => {
                   className="gap-2 h-10"
                 >
                   <User className="w-4 h-4" />
-                  <span className="hidden lg:inline">Войти</span>
+                  <span className="hidden lg:inline">{t('layout.signIn')}</span>
                 </Button>
               )}
             </div>

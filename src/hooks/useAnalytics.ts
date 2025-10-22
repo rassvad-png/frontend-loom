@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { apiClient } from "@/lib/api";
 
 export const useAnalytics = () => {
   const logEvent = async (
@@ -7,25 +7,11 @@ export const useAnalytics = () => {
     meta?: Record<string, any>
   ) => {
     try {
-      const { error } = await supabase
-        .from('analytics')
-        .insert({
-          app_id: appId,
-          user_id: null, // TODO: Add auth.uid() when auth is implemented
-          event,
-          meta: meta || {}
-        });
-
-      if (error) {
-        console.error('[Analytics] Error logging event:', error);
-        return false;
-      }
-
-      // Also update counters on apps table
+      // Update counters on apps table
       if (event === 'view') {
-        await supabase.rpc('increment_views', { app_id: appId });
+        await apiClient.incrementViews(appId);
       } else if (event === 'install') {
-        await supabase.rpc('increment_installs', { app_id: appId });
+        await apiClient.incrementInstalls(appId);
       }
 
       return true;

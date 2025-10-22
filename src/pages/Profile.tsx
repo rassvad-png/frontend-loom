@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabaseClient';
+import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,38 +134,30 @@ export default function Profile() {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('slug');
+      const categories = await apiClient.getCategories();
 
-      if (error) throw error;
-      setCategories(data || []);
+      setCategories(categories);
     } catch (error: any) {
       console.error('Error loading categories:', error);
     }
   };
 
   const loadProfile = async () => {
+    if (!user?.id) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
+      const profile = await apiClient.getProfile(user.id);
 
-      if (error) throw error;
-
-      if (data) {
-        setProfile(data);
-        setFirstName(data.first_name || '');
-        setLastName(data.last_name || '');
-        setBirthDate(data.birth_date || '');
-        setDisplayName(data.display_name || '');
-        setCountry(data.country || '');
+      if (profile) {
+        setProfile(profile);
+        setFirstName(profile.first_name || '');
+        setLastName(profile.last_name || '');
+        setBirthDate(profile.birth_date || '');
+        setDisplayName(profile.display_name || '');
+        setCountry(profile.country || '');
 
         // Sync language from DB to localStorage and i18n
-        const dbLanguage = data.language || 'ru';
+        const dbLanguage = profile.language || 'en';
         const localLanguage = localStorage.getItem('language');
 
         if (dbLanguage !== localLanguage) {
@@ -207,7 +199,7 @@ export default function Profile() {
   };
 
   const handleUpdateProfile = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     // Validation
     if (firstName && !validateName(firstName)) {
@@ -225,18 +217,13 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          birth_date: birthDate || null,
-          display_name: displayName,
-          country: country,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      await apiClient.updateProfile(user.id, {
+        first_name: firstName,
+        last_name: lastName,
+        birth_date: birthDate || null,
+        display_name: displayName,
+        country: country,
+      });
 
       toast.success(t('profile.notifications.profileUpdated'));
       loadProfile();
@@ -250,15 +237,10 @@ export default function Profile() {
   };
 
   const handleUpdateSettings = async (field: string, value: any) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ [field]: value })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      await apiClient.updateProfile(user.id, { [field]: value });
 
       toast.success(t('profile.notifications.settingsUpdated'));
       loadProfile();
@@ -270,7 +252,7 @@ export default function Profile() {
   };
 
   const toggleCategory = async (categoryId: string) => {
-    if (!user || !profile) return;
+    if (!user?.id || !profile) return;
 
     const currentCategories = profile.favorite_categories || [];
     const newCategories = currentCategories.includes(categoryId)
@@ -299,7 +281,7 @@ export default function Profile() {
   };
 
   const handleUpdateEmail = async () => {
-    if (!email || email === user?.email) return;
+    if (!user?.id || !email || email === user.email) return;
 
     if (!validateEmail(email)) {
       toast.error(t('profile.notifications.invalidEmail'));
@@ -308,8 +290,7 @@ export default function Profile() {
 
     setUpdating(true);
     try {
-      const { error } = await supabase.auth.updateUser({ email });
-      if (error) throw error;
+      await apiClient.updateUserEmail(email);
 
       toast.success(t('profile.notifications.emailUpdated'), {
         description: t('profile.notifications.emailConfirm'),
@@ -324,17 +305,14 @@ export default function Profile() {
   };
 
   const handleUpdatePassword = async () => {
-    if (!newPassword || newPassword !== confirmPassword) {
+    if (!user?.id || !newPassword || newPassword !== confirmPassword) {
       toast.error(t('profile.notifications.passwordMismatch'));
       return;
     }
 
     setUpdating(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      if (error) throw error;
+      await apiClient.updateUserPassword(newPassword);
 
       toast.success(t('profile.notifications.passwordUpdated'));
       setNewPassword('');
@@ -361,7 +339,7 @@ export default function Profile() {
   };
 
   const handleCropComplete = async (croppedImage: Blob) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     setUploading(true);
     setCropDialogOpen(false);
@@ -370,27 +348,10 @@ export default function Profile() {
       const filePath = `avatars/${user.id}.webp`;
 
       // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, croppedImage, {
-          upsert: true,
-          contentType: 'image/webp',
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
+      const avatarUrl = await apiClient.uploadAvatar(croppedImage, user.id);
 
       // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar: urlData.publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
+      await apiClient.updateProfile(user.id, { avatar: avatarUrl });
 
       toast.success(t('profile.notifications.avatarUpdated'));
       loadProfile();
@@ -700,7 +661,7 @@ export default function Profile() {
                   <div className="relative">
                     <Languages className="absolute left-3 top-3 w-4 h-4 text-muted-foreground z-10" />
                     <Select
-                      value={profile?.language || 'ru'}
+                      value={profile?.language || 'en'}
                       onValueChange={handleLanguageChange}
                     >
                       <SelectTrigger className="pl-10">

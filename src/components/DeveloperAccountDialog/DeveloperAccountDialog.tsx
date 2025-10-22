@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '@/lib/supabaseClient';
+import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import Step1 from './Step1';
@@ -279,22 +279,17 @@ export default function DeveloperAccountDialog({
       }
 
       // Create new dev account
-      const { error } = await supabase.from('dev_accounts').insert({
+      await apiClient.createDevAccount({
         user_id: userId,
         org_name: formData.org_name,
-        slug: slug,
-        type: formData.type,
+        website: formData.website || '',
+        contact_email: formData.contact_email || '',
+        github_url: formData.github_url || '',
+        legal_address: formData.type === 'official' ? formData.legal_address || '' : '',
         tax_identifier: formData.tax_identifier,
-        website: formData.website || null,
-        contact_email: formData.contact_email || null,
-        github_url: formData.github_url || null,
-        legal_address:
-          formData.type === 'official' ? formData.legal_address || null : null,
-        phone: formData.phone_country + formData.phone_number || null,
-        status: 'pending',
+        phone: formData.phone_country + formData.phone_number || '',
+        status: 'pending'
       });
-
-      if (error) throw error;
 
       toast.success(t('developer.success'));
       onClose();
