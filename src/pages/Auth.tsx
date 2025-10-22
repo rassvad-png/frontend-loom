@@ -92,10 +92,10 @@ const Auth = () => {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center">
               <Store className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
               Web Store
             </span>
           </div>

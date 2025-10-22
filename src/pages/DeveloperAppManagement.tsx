@@ -217,7 +217,7 @@ const DeveloperAppManagement = () => {
                 </Button>
               ) : (
                 <Button 
-                  className="bg-gradient-to-r from-primary to-purple-600"
+                  className="bg-gradient-to-r from-primary to-teal-500"
                   onClick={handlePublish}
                 >
                   {t('devAppManagement.publish')}
@@ -386,7 +386,7 @@ const DeveloperAppManagement = () => {
               <Button 
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-gradient-to-r from-primary to-purple-600"
+                className="bg-gradient-to-r from-primary to-teal-500"
               >
                 {saving ? (
                   <>

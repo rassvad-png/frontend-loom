@@ -194,7 +194,7 @@ const AppDetails = () => {
               {/* Action Button */}
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 w-full md:w-auto"
+                className="bg-gradient-to-r from-primary to-teal-500 hover:opacity-90 w-full md:w-auto"
                 onClick={handleInstall}
               >
                 <Download className="w-5 h-5 mr-2" />
@@ -341,7 +341,7 @@ const AppDetails = () => {
             <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-purple-600">C</span>
+                  <span className="text-lg font-bold text-teal-500">C</span>
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium">{t('appDetails.thirdApp')}</h3>

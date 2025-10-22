@@ -36,11 +36,17 @@ export const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                 onClick={() => handleTabClick(tab)}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 px-6 py-2 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "" : "text-muted-foreground"
                 )}
               >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs font-medium">{tab.label}</span>
+                <Icon className={cn(
+                  "w-6 h-6",
+                  isActive ? "text-primary" : ""
+                )} />
+                <span className={cn(
+                  "text-xs font-medium",
+                  isActive ? "bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent" : ""
+                )}>{tab.label}</span>
               </button>
             );
           })}

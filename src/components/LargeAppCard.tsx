@@ -105,7 +105,7 @@ export const LargeAppCard = ({ app }: LargeAppCardProps) => {
 
       {/* App Info Footer */}
       <div className="p-4 md:p-6 flex items-center justify-between bg-card">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg">
             <img 
               src={app.icon} 
@@ -120,14 +120,14 @@ export const LargeAppCard = ({ app }: LargeAppCardProps) => {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl md:text-2xl font-bold mb-1 line-clamp-1">{app.name}</h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">{app.description}</p>
+            <h2 className="text-xl md:text-xl font-bold mb-1 line-clamp-1">{app.name}</h2>
+            <p className="text-sm text-muted-foreground line-clamp-2 mr-3">{app.description}</p>
           </div>
         </div>
         
         <Button 
           size="lg"
-          className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 flex-shrink-0"
+          className="bg-gradient-to-r from-primary to-teal-500 hover:opacity-90 flex-shrink-0"
           onClick={handleInstall}
         >
           <Download className="w-5 h-5 mr-2" />

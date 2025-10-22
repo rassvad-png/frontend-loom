@@ -82,7 +82,7 @@ export const AppCard = ({ app }: AppCardProps) => {
             
             <Button 
               size="sm" 
-              className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+              className="bg-gradient-to-r from-primary to-teal-500 hover:opacity-90"
               onClick={handleInstall}
             >
               Скачать

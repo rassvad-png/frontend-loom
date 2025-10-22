@@ -19,6 +19,9 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        teal: {
+          500: "#29a0be", // Ваш темно-бирюзовый цвет как teal-500
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

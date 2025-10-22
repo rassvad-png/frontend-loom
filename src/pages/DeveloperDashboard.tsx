@@ -46,7 +46,7 @@ const DeveloperDashboard = () => {
             <p className="text-muted-foreground">{t('devDashboard.subtitle')}</p>
           </div>
           <Button 
-            className="bg-gradient-to-r from-primary to-purple-600"
+            className="bg-gradient-to-r from-primary to-teal-500"
             onClick={handleCreateApp}
             disabled={!devAccount || devAccount.status !== 'approved'}
           >
