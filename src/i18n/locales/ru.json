@@ -1,0 +1,121 @@
+{
+  "developer": {
+    "title": "Создать аккаунт разработчика",
+    "description": "Заполните форму для регистрации аккаунта разработчика. Ваша заявка будет рассмотрена в течение 24 часов.",
+    "form": {
+      "orgName": "Название организации",
+      "orgNamePlaceholder": "ООО «Название компании»",
+      "taxIdentifier": "ИНН",
+      "taxIdentifierPlaceholder": "1234567890",
+      "website": "Веб-сайт",
+      "websitePlaceholder": "https://example.com",
+      "contactEmail": "Контактный email",
+      "contactEmailPlaceholder": "contact@example.com",
+      "githubUrl": "GitHub URL",
+      "githubUrlPlaceholder": "https://github.com/username",
+      "legalAddress": "Юридический адрес",
+      "legalAddressPlaceholder": "Введите полный юридический адрес",
+      "submit": "Отправить заявку",
+      "submitting": "Отправка...",
+      "cancel": "Отмена"
+    },
+    "validation": {
+      "orgNameRequired": "Название организации обязательно",
+      "taxIdentifierRequired": "ИНН обязателен",
+      "invalidEmail": "Неверный формат email",
+      "alreadyExists": "У вас уже есть аккаунт разработчика"
+    },
+    "success": "Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.",
+    "error": "Ошибка при создании заявки"
+  },
+  "profile": {
+    "title": "Личный кабинет",
+    "tabs": {
+      "profile": "Профиль",
+      "settings": "Настройки",
+      "actions": "Действия"
+    },
+    "userProfile": {
+      "title": "Профиль пользователя",
+      "description": "Управление личными данными",
+      "uploadPhoto": "Загрузить фото",
+      "uploading": "Загрузка...",
+      "photoHint": "JPG, PNG или WebP до 2MB",
+      "displayName": "Отображаемое имя",
+      "displayNamePlaceholder": "Как вас будут называть другие",
+      "lastName": "Фамилия",
+      "lastNamePlaceholder": "Иванов",
+      "firstName": "Имя",
+      "firstNamePlaceholder": "Иван",
+      "birthDate": "Дата рождения",
+      "saveProfile": "Сохранить профиль",
+      "saving": "Сохранение..."
+    },
+    "security": {
+      "title": "Безопасность",
+      "description": "Управление email и паролем",
+      "email": "Email",
+      "changeEmail": "Изменить",
+      "passwordChange": "Смена пароля",
+      "newPassword": "Новый пароль",
+      "confirmPassword": "Подтвердите пароль",
+      "updatePassword": "Обновить пароль"
+    },
+    "categories": {
+      "title": "Любимые категории",
+      "description": "Выберите категории, которые вам интересны",
+      "noCategories": "Категории пока не добавлены"
+    },
+    "regional": {
+      "title": "Региональные настройки",
+      "description": "Язык и страна",
+      "country": "Страна",
+      "countryPlaceholder": "Россия",
+      "language": "Язык",
+      "languagePlaceholder": "Выберите язык",
+      "languageRu": "Русский",
+      "languageEn": "English"
+    },
+    "appearance": {
+      "title": "Внешний вид",
+      "description": "Выберите тему приложения",
+      "theme": "Тема",
+      "themePlaceholder": "Выберите тему",
+      "themeLight": "Светлая",
+      "themeDark": "Тёмная"
+    },
+    "actions": {
+      "title": "Действия",
+      "description": "Быстрый доступ к функциям",
+      "donate": "Поддержать проект (Донат)",
+      "registerDev": "Зарегистрировать аккаунт разработчика",
+      "favorites": "Избранное",
+      "likes": "Лайки",
+      "reviews": "Ваши отзывы",
+      "ratings": "Ваши оценки"
+    },
+    "notifications": {
+      "profileUpdated": "Профиль обновлён",
+      "settingsUpdated": "Настройки обновлены",
+      "emailUpdated": "Email обновлён",
+      "emailConfirm": "Проверьте почту для подтверждения",
+      "passwordUpdated": "Пароль обновлён",
+      "avatarUpdated": "Аватар обновлён",
+      "errorLoading": "Ошибка загрузки профиля",
+      "errorUpdate": "Ошибка обновления",
+      "errorSettings": "Ошибка обновления настроек",
+      "errorEmail": "Ошибка обновления email",
+      "errorPassword": "Ошибка обновления пароля",
+      "errorAvatar": "Ошибка загрузки аватара",
+      "passwordMismatch": "Пароли не совпадают",
+      "invalidEmail": "Неверный формат email",
+      "invalidDate": "Дата не может быть в будущем",
+      "invalidName": "Имя должно содержать только буквы"
+    },
+    "crop": {
+      "title": "Обрезать фото",
+      "cancel": "Отмена",
+      "apply": "Применить"
+    }
+  }
+}

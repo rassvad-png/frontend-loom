@@ -1,0 +1,121 @@
+{
+  "developer": {
+    "title": "Create Developer Account",
+    "description": "Fill out the form to register a developer account. Your application will be reviewed within 24 hours.",
+    "form": {
+      "orgName": "Organization Name",
+      "orgNamePlaceholder": "Company Name Ltd.",
+      "taxIdentifier": "Tax ID",
+      "taxIdentifierPlaceholder": "1234567890",
+      "website": "Website",
+      "websitePlaceholder": "https://example.com",
+      "contactEmail": "Contact Email",
+      "contactEmailPlaceholder": "contact@example.com",
+      "githubUrl": "GitHub URL",
+      "githubUrlPlaceholder": "https://github.com/username",
+      "legalAddress": "Legal Address",
+      "legalAddressPlaceholder": "Enter full legal address",
+      "submit": "Submit Application",
+      "submitting": "Submitting...",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "orgNameRequired": "Organization name is required",
+      "taxIdentifierRequired": "Tax ID is required",
+      "invalidEmail": "Invalid email format",
+      "alreadyExists": "You already have a developer account"
+    },
+    "success": "Application submitted successfully! We will contact you soon.",
+    "error": "Error creating application"
+  },
+  "profile": {
+    "title": "Profile",
+    "tabs": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "actions": "Actions"
+    },
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Manage personal information",
+      "uploadPhoto": "Upload photo",
+      "uploading": "Uploading...",
+      "photoHint": "JPG, PNG or WebP up to 2MB",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "How others will see you",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Smith",
+      "firstName": "First name",
+      "firstNamePlaceholder": "John",
+      "birthDate": "Birth date",
+      "saveProfile": "Save profile",
+      "saving": "Saving..."
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage email and password",
+      "email": "Email",
+      "changeEmail": "Change",
+      "passwordChange": "Change password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "updatePassword": "Update password"
+    },
+    "categories": {
+      "title": "Favorite categories",
+      "description": "Select categories you're interested in",
+      "noCategories": "No categories added yet"
+    },
+    "regional": {
+      "title": "Regional settings",
+      "description": "Language and country",
+      "country": "Country",
+      "countryPlaceholder": "United States",
+      "language": "Language",
+      "languagePlaceholder": "Select language",
+      "languageRu": "Русский",
+      "languageEn": "English"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Select app theme",
+      "theme": "Theme",
+      "themePlaceholder": "Select theme",
+      "themeLight": "Light",
+      "themeDark": "Dark"
+    },
+    "actions": {
+      "title": "Actions",
+      "description": "Quick access to features",
+      "donate": "Support project (Donate)",
+      "registerDev": "Register developer account",
+      "favorites": "Favorites",
+      "likes": "Likes",
+      "reviews": "Your reviews",
+      "ratings": "Your ratings"
+    },
+    "notifications": {
+      "profileUpdated": "Profile updated",
+      "settingsUpdated": "Settings updated",
+      "emailUpdated": "Email updated",
+      "emailConfirm": "Check your email for confirmation",
+      "passwordUpdated": "Password updated",
+      "avatarUpdated": "Avatar updated",
+      "errorLoading": "Error loading profile",
+      "errorUpdate": "Update error",
+      "errorSettings": "Settings update error",
+      "errorEmail": "Email update error",
+      "errorPassword": "Password update error",
+      "errorAvatar": "Avatar upload error",
+      "passwordMismatch": "Passwords do not match",
+      "invalidEmail": "Invalid email format",
+      "invalidDate": "Date cannot be in the future",
+      "invalidName": "Name should contain only letters"
+    },
+    "crop": {
+      "title": "Crop photo",
+      "cancel": "Cancel",
+      "apply": "Apply"
+    }
+  }
+}
