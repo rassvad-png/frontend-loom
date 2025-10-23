@@ -92,3 +92,63 @@ export const INCREMENT_INSTALLS = gql`
     }
   }
 `;
+
+// App mutations
+export const CREATE_APP = gql`
+  mutation CreateApp($app: appsInsertInput!) {
+    insertIntoappsCollection(objects: [$app]) {
+      records {
+        id
+        slug
+        name
+        icon_url
+        categories
+        screenshots
+        url
+        install_url
+        verified
+        dev_account_id
+        created_at
+      }
+    }
+  }
+`;
+
+export const UPDATE_APP = gql`
+  mutation UpdateApp($appId: uuid!, $updates: appsUpdateInput!) {
+    updateappsCollection(filter: { id: { eq: $appId } }, set: $updates) {
+      affectedCount
+      records {
+        id
+        slug
+        name
+        icon_url
+        categories
+        screenshots
+        url
+        install_url
+        verified
+      }
+    }
+  }
+`;
+
+export const DELETE_APP = gql`
+  mutation DeleteApp($appId: uuid!) {
+    deleteFromappsCollection(filter: { id: { eq: $appId } }) {
+      affectedCount
+    }
+  }
+`;
+
+export const CHECK_APP_SLUG = gql`
+  query CheckAppSlug($slug: String!) {
+    appsCollection(filter: { slug: { eq: $slug } }, first: 1) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+`;

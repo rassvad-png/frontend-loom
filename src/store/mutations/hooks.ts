@@ -1,11 +1,15 @@
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { 
   UPDATE_PROFILE, 
   CREATE_DEV_ACCOUNT, 
   CREATE_APP_TRANSLATION, 
   UPDATE_APP_TRANSLATIONS, 
   INCREMENT_VIEWS, 
-  INCREMENT_INSTALLS 
+  INCREMENT_INSTALLS,
+  CREATE_APP,
+  UPDATE_APP,
+  DELETE_APP,
+  CHECK_APP_SLUG
 } from './mutations';
 
 // Profile mutations
@@ -113,6 +117,73 @@ export const useIncrementInstallsMutation = () => {
 
   return {
     incrementInstalls,
+    loading,
+    error,
+  };
+};
+
+// App mutations
+export const useCreateAppMutation = () => {
+  const [createAppMutation, { loading, error }] = useMutation(CREATE_APP);
+
+  const createApp = async (app: any) => {
+    const result = await createAppMutation({
+      variables: { app },
+    });
+    return (result.data as any)?.insertIntoappsCollection?.records?.[0];
+  };
+
+  return {
+    createApp,
+    loading,
+    error,
+  };
+};
+
+export const useUpdateAppMutation = () => {
+  const [updateAppMutation, { loading, error }] = useMutation(UPDATE_APP);
+
+  const updateApp = async (appId: string, updates: any) => {
+    const result = await updateAppMutation({
+      variables: { appId, updates },
+    });
+    return (result.data as any)?.updateappsCollection?.records?.[0];
+  };
+
+  return {
+    updateApp,
+    loading,
+    error,
+  };
+};
+
+export const useDeleteAppMutation = () => {
+  const [deleteAppMutation, { loading, error }] = useMutation(DELETE_APP);
+
+  const deleteApp = async (appId: string) => {
+    const result = await deleteAppMutation({
+      variables: { appId },
+    });
+    return (result.data as any)?.deleteFromappsCollection?.affectedCount;
+  };
+
+  return {
+    deleteApp,
+    loading,
+    error,
+  };
+};
+
+export const useCheckAppSlug = (slug: string) => {
+  const { data, loading, error } = useQuery<any>(CHECK_APP_SLUG, {
+    variables: { slug },
+    skip: !slug,
+  });
+
+  const isAvailable = !(data as any)?.appsCollection?.edges?.length;
+
+  return {
+    isAvailable,
     loading,
     error,
   };

@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client/react';
 import { INTROSPECTION_QUERY } from '@/lib/graphql/introspection';
 
 export const SchemaChecker = () => {
-  const { data, loading, error } = useQuery(INTROSPECTION_QUERY);
+  const { data, loading, error } = useQuery<any>(INTROSPECTION_QUERY);
 
   if (loading) return <div>Loading schema...</div>;
   if (error) {
