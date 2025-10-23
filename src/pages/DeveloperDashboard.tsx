@@ -25,9 +25,9 @@ const DeveloperDashboard = () => {
   }, [user, authLoading, navigate]);
 
   const handleCreateApp = () => {
-    if (!devAccount || devAccount.status !== 'approved') {
-      return;
-    }
+    // if (!devAccount || devAccount.status !== 'approved') {
+    //   return;
+    // }
     navigate('/developer/app/new');
   };
 
@@ -48,7 +48,7 @@ const DeveloperDashboard = () => {
           <Button 
             className="bg-gradient-to-r from-primary to-teal-500"
             onClick={handleCreateApp}
-            disabled={!devAccount || devAccount.status !== 'approved'}
+            // disabled={!devAccount || devAccount.status !== 'approved'}
           >
             <Plus className="w-4 h-4 mr-2" />
             {t('devDashboard.addApp')}

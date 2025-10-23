@@ -13,7 +13,7 @@ import { ArrowLeft, Star, Download, Eye, MessageSquare, ThumbsUp, ExternalLink, 
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserLanguage, useDevAccountQuery } from '@/store';
-import { useAppQuery, useAppTranslationsQuery, useUpdateAppTranslationsMutation } from '@/store';
+import { useAppQuery, useAppTranslationsQuery, useUpdateAppTranslationsMutation, useCategoriesQuery } from '@/store';
 import type { AppStats } from '@/types';
 
 const DeveloperAppManagement = () => {
@@ -28,6 +28,7 @@ const DeveloperAppManagement = () => {
   const { app: rawApp, loading: appLoading } = useAppQuery(id || '');
   const { translations, loading: translationsLoading } = useAppTranslationsQuery(id ? [id] : []);
   const { updateAppTranslations } = useUpdateAppTranslationsMutation();
+  const { categories, loading: categoriesLoading } = useCategoriesQuery();
   
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -172,7 +173,7 @@ const DeveloperAppManagement = () => {
     }
   };
 
-  if (appLoading || translationsLoading) {
+  if (appLoading || translationsLoading || categoriesLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
@@ -358,14 +359,17 @@ const DeveloperAppManagement = () => {
                   <SelectValue placeholder={t('devAppManagement.form.categoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ai">{t('devAppManagement.categories.ai')}</SelectItem>
-                  <SelectItem value="crypto">{t('devAppManagement.categories.crypto')}</SelectItem>
-                  <SelectItem value="games">{t('devAppManagement.categories.games')}</SelectItem>
-                  <SelectItem value="business">{t('devAppManagement.categories.business')}</SelectItem>
-                  <SelectItem value="utilities">{t('devAppManagement.categories.utilities')}</SelectItem>
-                  <SelectItem value="productivity">{t('devAppManagement.categories.productivity')}</SelectItem>
-                  <SelectItem value="lifestyle">{t('devAppManagement.categories.lifestyle')}</SelectItem>
-                  <SelectItem value="music">{t('devAppManagement.categories.music')}</SelectItem>
+                  {categoriesLoading ? (
+                    <SelectItem value="" disabled>
+                      {t('devAppManagement.form.loadingCategories')}
+                    </SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.slug}>
+                        {t(`devAppManagement.categories.${category.slug}`)}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

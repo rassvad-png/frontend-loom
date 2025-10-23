@@ -187,7 +187,7 @@ export default function SettingsTab({ profile, onUpdateSettings }: SettingsTabPr
                     className="cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => toggleCategory(category.id)}
                   >
-                    {category.slug}
+                    {t(`devAppManagement.categories.${category.slug}`)}
                   </Badge>
                 );
               })}

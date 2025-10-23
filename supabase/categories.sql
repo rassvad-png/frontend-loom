@@ -1,0 +1,25 @@
+-- Insert categories into the database
+INSERT INTO public.categories (slug) VALUES 
+('games'),
+('health-fitness'),
+('education'),
+('sports'),
+('social-networking'),
+('weather'),
+('food-drink'),
+('medical'),
+('magazines-news'),
+('finance'),
+('navigation'),
+('travel'),
+('music'),
+('entertainment'),
+('news'),
+('utilities'),
+('lifestyle'),
+('productivity'),
+('books'),
+('photo-video'),
+('business'),
+('reference')
+ON CONFLICT (slug) DO NOTHING;
